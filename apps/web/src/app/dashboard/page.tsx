@@ -1,18 +1,11 @@
-import { createClient } from "@/lib/supabase/server";
 import { fetchProperties } from "@/lib/api";
+import { requireAuth } from "@/lib/auth-server";
 import { isPlatformAdmin } from "@/lib/platform-admin";
 import { DashboardView } from "@/components/dashboard-view";
 import { AppShell } from "@/components/app-shell";
 
 export default async function DashboardPage() {
-  const supabase = await createClient();
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-
-  if (!session) {
-    return null;
-  }
+  const { supabase, accessToken } = await requireAuth();
 
   let properties: Awaited<ReturnType<typeof fetchProperties>>["data"] = [];
   let total = 0;
@@ -20,7 +13,7 @@ export default async function DashboardPage() {
   const admin = await isPlatformAdmin(supabase);
 
   try {
-    const result = await fetchProperties(session.access_token, { limit: "100" });
+    const result = await fetchProperties(accessToken, { limit: "100" });
     properties = result.data;
     total = result.total;
   } catch (e) {
@@ -43,7 +36,7 @@ export default async function DashboardPage() {
         </div>
       ) : (
         <DashboardView
-          accessToken={session.access_token}
+          accessToken={accessToken}
           initialProperties={properties}
           initialTotal={total}
         />

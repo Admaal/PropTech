@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
 import { fetchProperty, fetchAnalyses } from "@/lib/api";
+import { requireAuth } from "@/lib/auth-server";
 import { AppShell } from "@/components/app-shell";
 import { PropertyDocumentsSection } from "@/components/property-documents-section";
 import { PropertyLocationMap } from "@/components/property-location-map-loader";
@@ -13,22 +13,15 @@ interface PropertyPageProps {
 
 export default async function PropertyPage({ params }: PropertyPageProps) {
   const { id } = await params;
-  const supabase = await createClient();
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-
-  if (!session) {
-    return null;
-  }
+  const { accessToken } = await requireAuth();
 
   let property: Awaited<ReturnType<typeof fetchProperty>>;
   let analyses: Awaited<ReturnType<typeof fetchAnalyses>> = [];
 
   try {
     [property, analyses] = await Promise.all([
-      fetchProperty(session.access_token, id),
-      fetchAnalyses(session.access_token, id),
+      fetchProperty(accessToken, id),
+      fetchAnalyses(accessToken, id),
     ]);
   } catch {
     notFound();

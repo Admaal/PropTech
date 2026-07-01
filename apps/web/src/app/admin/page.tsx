@@ -1,18 +1,11 @@
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { requireAuth } from "@/lib/auth-server";
 import { isPlatformAdmin } from "@/lib/platform-admin";
 import { AppShell } from "@/components/app-shell";
 import { AdminPanel } from "@/components/admin-panel";
 
 export default async function AdminPage() {
-  const supabase = await createClient();
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-
-  if (!session) {
-    redirect("/login");
-  }
+  const { supabase } = await requireAuth();
 
   const admin = await isPlatformAdmin(supabase);
   if (!admin) {

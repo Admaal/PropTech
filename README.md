@@ -149,6 +149,10 @@ E2E en push a `main`: smoke + upload mockeado (sin consumir cuota demo ni Gemini
 
 Full-stack con IA real: workflow manual/semanal `.github/workflows/e2e-full-stack.yml` (requiere secret `PLATFORM_ADMIN_PASSWORD`).
 
+## Seguridad
+
+Ver [SECURITY.md](SECURITY.md) para reportar vulnerabilidades y buenas prácticas antes de desplegar o hacer pública la repo.
+
 Para tests RLS en CI, configura secrets `SUPABASE_URL` y `SUPABASE_ANON_KEY`.
 
 ## Despliegue
