@@ -89,7 +89,7 @@ Modelos Gemini vigentes: `node scripts/list-gemini-models.mjs`
 | `demo-a@test.com` | Inmobiliaria Centro | 12 |
 | `demo-b@test.com` | Gestión Norte | 8 |
 
-La contraseña se configura en `.env` (`DEMO_USER_PASSWORD` / `NEXT_PUBLIC_DEMO_PASSWORD`) y **no debe subirse al repositorio**.
+La contraseña demo se configura en el **servidor** (`DEMO_USER_PASSWORD` en Vercel o `.env.local` de web) y **no debe subirse al repositorio** ni exponerse con `NEXT_PUBLIC_*`.
 
 El login muestra botones de acceso rápido para Demo A y Demo B. El registro no está disponible (Supabase sign-ups deshabilitado).
 

@@ -47,6 +47,7 @@ documentsRouter.post(
         propertyId,
         file: req.file,
         skipQuota: authReq.isPlatformAdmin,
+        accessToken: authReq.accessToken,
       });
 
       res.status(202).json(result);

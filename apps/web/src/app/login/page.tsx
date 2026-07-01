@@ -14,7 +14,7 @@ export default function LoginPage() {
           esta demo.
         </p>
       </div>
-      <LoginForm />
+      <LoginForm demoEnabled={Boolean(process.env.DEMO_USER_PASSWORD)} />
     </main>
   );
 }

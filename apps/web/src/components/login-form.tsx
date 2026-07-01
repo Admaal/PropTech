@@ -3,9 +3,13 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { DEMO_ACCOUNTS, DEMO_DAILY_ANALYSIS_LIMIT, DEMO_PASSWORD, isDemoLoginConfigured } from "@/lib/demo-mode";
+import { DEMO_ACCOUNTS, DEMO_DAILY_ANALYSIS_LIMIT } from "@/lib/demo-mode";
 
-export function LoginForm() {
+interface LoginFormProps {
+  demoEnabled: boolean;
+}
+
+export function LoginForm({ demoEnabled }: LoginFormProps) {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -39,15 +43,37 @@ export function LoginForm() {
   }
 
   async function handleDemoLogin(demoEmail: string) {
-    if (!isDemoLoginConfigured) {
+    if (!demoEnabled) {
       setError(
-        "Falta NEXT_PUBLIC_DEMO_PASSWORD en apps/web/.env.local (reinicia el servidor tras añadirla).",
+        "Falta DEMO_USER_PASSWORD en el servidor (Vercel env o apps/web/.env.local).",
       );
       return;
     }
+
+    setError(null);
+    setLoading(true);
     setEmail(demoEmail);
-    setPassword(DEMO_PASSWORD);
-    await signIn(demoEmail, DEMO_PASSWORD);
+
+    try {
+      const res = await fetch("/api/demo-login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: demoEmail }),
+      });
+      const body = (await res.json()) as { error?: string };
+
+      if (!res.ok) {
+        setError(body.error ?? "Error al iniciar sesión demo");
+        return;
+      }
+
+      router.push("/dashboard");
+      router.refresh();
+    } catch {
+      setError("Error de red al iniciar sesión demo");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -62,7 +88,7 @@ export function LoginForm() {
             <button
               key={account.id}
               type="button"
-              disabled={loading || !isDemoLoginConfigured}
+              disabled={loading || !demoEnabled}
               onClick={() => void handleDemoLogin(account.email)}
               className="rounded-lg border border-border bg-background px-4 py-3 text-left text-sm font-medium transition-colors hover:bg-muted disabled:opacity-60"
             >
@@ -70,9 +96,9 @@ export function LoginForm() {
             </button>
           ))}
         </div>
-        {!isDemoLoginConfigured && (
+        {!demoEnabled && (
           <p className="text-xs text-amber-700 dark:text-amber-300">
-            Configura NEXT_PUBLIC_DEMO_PASSWORD en apps/web/.env.local
+            Configura DEMO_USER_PASSWORD en el servidor (no uses NEXT_PUBLIC_*)
           </p>
         )}
         {error && (

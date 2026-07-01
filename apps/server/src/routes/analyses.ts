@@ -7,9 +7,12 @@ import {
 import { createUserClient } from "../lib/supabase.js";
 import { AnalysisService } from "../services/analysis.service.js";
 
+import { analysesPollRateLimiter } from "../middleware/rate-limit.js";
+
 export const analysesRouter: Router = Router();
 
 analysesRouter.use(authMiddleware);
+analysesRouter.use(analysesPollRateLimiter);
 
 analysesRouter.get("/", async (req, res, next) => {
   try {

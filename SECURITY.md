@@ -49,6 +49,7 @@ Out of scope:
 - Use a strong random `INTERNAL_SERVICE_KEY` (not `dev-internal-key`).
 - Disable public signup in Supabase Auth if running a public demo.
 - Do not expose `SUPABASE_SERVICE_ROLE_KEY` or `GEMINI_API_KEY` to the browser.
+- Demo login uses server-only `DEMO_USER_PASSWORD` via `/api/demo-login` (never `NEXT_PUBLIC_*`).
 
 ## Secret scanning
 

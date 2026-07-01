@@ -121,7 +121,7 @@ Antes del deploy final, actualiza `cors_origin` en `terraform.tfvars` con tu URL
    - `NEXT_PUBLIC_SUPABASE_URL`
    - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
    - `NEXT_PUBLIC_API_URL` = URL Cloud Run del paso 4
-   - `NEXT_PUBLIC_DEMO_PASSWORD` = contraseña de las cuentas demo (solo en Vercel, no en Git)
+   - `DEMO_USER_PASSWORD` = contraseña de las cuentas demo (solo en Vercel, sin prefijo `NEXT_PUBLIC_`)
 4. Supabase Auth → Site URL y Redirect URLs con tu dominio Vercel
 
 Guía completa: [demo-deploy.md](demo-deploy.md)

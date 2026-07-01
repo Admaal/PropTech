@@ -35,6 +35,7 @@ export class DocumentService {
     propertyId: string;
     file: Express.Multer.File;
     skipQuota?: boolean;
+    accessToken: string;
   }): Promise<UploadDocumentResponse> {
     if (input.file.mimetype !== "application/pdf") {
       throw new DocumentUploadError(
@@ -111,12 +112,15 @@ export class DocumentService {
       organizationId: property.organization_id,
     });
 
-    dispatchAnalysisJob({
-      analysisId,
-      documentId: document.id,
-      storagePath,
-      organizationId: property.organization_id,
-    });
+    dispatchAnalysisJob(
+      {
+        analysisId,
+        documentId: document.id,
+        storagePath,
+        organizationId: property.organization_id,
+      },
+      input.accessToken,
+    );
 
     return { document, analysis_id: analysisId };
   }

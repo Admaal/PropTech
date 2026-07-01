@@ -21,16 +21,3 @@ export function createUserClient(accessToken: string): SupabaseClient {
     },
   });
 }
-
-export function createServiceClient(): SupabaseClient {
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!serviceRoleKey) {
-    throw new Error("SUPABASE_SERVICE_ROLE_KEY es obligatorio para operaciones internas");
-  }
-  return createClient(url, serviceRoleKey, {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false,
-    },
-  });
-}
