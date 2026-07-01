@@ -39,8 +39,9 @@ Out of scope:
 - **Multi-tenancy:** PostgreSQL Row Level Security on tenant tables; organization membership enforced in policies.
 - **API:** Bearer JWT validated with Supabase on every request; business logic in services.
 - **Storage:** Private bucket; PDF-only; path scoped by organization.
-- **AI:** Async processing via mcp-ai; Gemini output validated with Zod before persistence.
-- **Secrets:** Never commit `.env`; production secrets in GCP Secret Manager / GitHub Actions secrets.
+- **AI:** Async processing via mcp-ai; jobs validated against DB before service_role; Gemini output validated with Zod before persistence.
+- **Secrets:** Never commit `.env`; production secrets in GCP Secret Manager, Vercel env vars, and GitHub Actions secrets.
+- **Platform admin:** `/admin` gated in middleware + RLS; use a dedicated account with strong password (not demo users).
 
 ## Before deploying or forking
 
@@ -50,6 +51,7 @@ Out of scope:
 - Disable public signup in Supabase Auth if running a public demo.
 - Do not expose `SUPABASE_SERVICE_ROLE_KEY` or `GEMINI_API_KEY` to the browser.
 - Demo login uses server-only `DEMO_USER_PASSWORD` via `/api/demo-login` (never `NEXT_PUBLIC_*`).
+- Configure the same demo password in Vercel environment variables for production.
 
 ## Secret scanning
 

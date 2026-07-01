@@ -5,5 +5,5 @@ output "server_url" {
 
 output "mcp_ai_url" {
   value       = google_cloud_run_v2_service.mcp_ai.uri
-  description = "URL interna del servicio MCP-AI"
+  description = "URL de mcp-ai (invocación restringida por IAM run.invoker + X-Internal-Key)"
 }

@@ -4,6 +4,7 @@ import type { AnalyzeJob } from "@proptech/shared";
 import { ZodError } from "zod";
 import { createServiceClient } from "./lib/supabase.js";
 import { parseGeminiAnalysisJson } from "./parse-analysis-response.js";
+import { validateAnalysisJob } from "./validate-analysis-job.js";
 
 function buildSystemPrompt(): string {
   const now = new Date();
@@ -95,7 +96,7 @@ function friendlyError(err: unknown): string {
   if (isModelUnavailableError(err)) {
     return (
       "Modelo Gemini no disponible (retirado o nombre incorrecto). " +
-      "Ejecuta: node scripts/list-gemini-models.mjs"
+      "Define GEMINI_MODEL en .env con modelos vigentes de Google AI Studio."
     );
   }
   return msg.length > 400 ? `${msg.slice(0, 400)}…` : msg;
@@ -161,6 +162,18 @@ export async function runAnalysis(job: AnalyzeJob): Promise<void> {
   }
 
   const supabase = createServiceClient();
+
+  const invalidReason = await validateAnalysisJob(supabase, job);
+  if (invalidReason) {
+    console.warn(
+      `[mcp-ai] Job rechazado ${job.analysisId}: ${invalidReason}`,
+    );
+    if (invalidReason !== "Análisis no encontrado") {
+      await markFailed(job.analysisId, `Job inválido: ${invalidReason}`);
+    }
+    return;
+  }
+
   const startedAt = Date.now();
 
   await supabase

@@ -99,6 +99,7 @@ Before writing code, evaluate in order:
 - Keep components reusable but not over-abstracted.
 - Use skeleton loaders for async states.
 - Ensure responsive design by default.
+- Dark mode via `theme-toggle` is supported alongside DESIGN.md light defaults.
 - Avoid premature UI abstraction layers.
 
 ---
@@ -162,7 +163,7 @@ Always update documentation when:
 Maintain:
 
 - README.md (high-level overview)
-- architecture.md (system diagram and explanation)
+- docs/architecture.md (system diagram and explanation)
 - ADRs for significant decisions
 
 ---

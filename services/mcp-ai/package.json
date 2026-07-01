@@ -10,7 +10,7 @@
     "start": "node dist/index.js",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "lint": "echo \"no lint configured\""
+    "lint": "eslint src"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.0",
@@ -22,10 +22,13 @@
     "zod": "^3.24.2"
   },
   "devDependencies": {
+    "@eslint/js": "^9.39.1",
     "@types/express": "^5.0.0",
     "@types/node": "^22.13.10",
+    "eslint": "^9.39.1",
     "tsx": "^4.19.3",
     "typescript": "^5.8.2",
+    "typescript-eslint": "^8.46.4",
     "vitest": "^3.0.9"
   }
 }

@@ -25,7 +25,6 @@ jobs:
 
       - name: Audit dependencies (high+)
         run: pnpm audit --audit-level high
-        continue-on-error: true
 
       - name: Build shared package
         run: pnpm --filter @proptech/shared build
@@ -35,6 +34,12 @@ jobs:
 
       - name: Lint web
         run: pnpm --filter @proptech/web lint
+
+      - name: Lint server
+        run: pnpm --filter @proptech/server lint
+
+      - name: Lint mcp-ai
+        run: pnpm --filter @proptech/mcp-ai lint
 
       - name: Shared tests (Zod schemas)
         run: pnpm --filter @proptech/shared test

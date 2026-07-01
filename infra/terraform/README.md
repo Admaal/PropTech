@@ -1,6 +1,6 @@
 # Despliegue en GCP Cloud Run
 
-Infraestructura mínima para portfolio: **server** (público) + **mcp-ai** (solo tráfico interno).
+Infraestructura mínima para portfolio: **server** (público) + **mcp-ai** (URL pública, invocación restringida por IAM).
 
 ## Prerrequisitos
 
@@ -72,5 +72,5 @@ upload_rate_limit_max = 5
 
 ## Notas
 
-- mcp-ai usa `INGRESS_TRAFFIC_INTERNAL_ONLY`: solo el server en la misma VPC/proyecto puede invocarlo.
-- Para demo local usa `docker compose up --build` (ver README raíz).
+- mcp-ai usa `INGRESS_TRAFFIC_ALL` con **IAM `run.invoker`** restringido a la service account de Compute (solo el server puede invocarlo). El server envía además `X-Internal-Key` e ID token de Cloud Run.
+- Para demo local usa `docker compose up --build` (ver README raíz). En local el puerto 3002 está expuesto: usa `INTERNAL_SERVICE_KEY` fuerte.

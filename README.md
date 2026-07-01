@@ -79,7 +79,7 @@ pnpm dev
 - `GEMINI_API_KEY` — [Google AI Studio](https://aistudio.google.com/apikey)
 - `INTERNAL_SERVICE_KEY` — clave compartida server ↔ mcp-ai
 
-Modelos Gemini vigentes: `node scripts/list-gemini-models.mjs`
+Modelos Gemini vigentes: consulta [Google AI Studio](https://aistudio.google.com/) o define `GEMINI_MODEL` en `.env`.
 
 ## Demo pública
 
@@ -114,8 +114,6 @@ El login muestra botones de acceso rápido para Demo A y Demo B. El registro no 
 
 Guía GCP: **[docs/gcp-setup.md](docs/gcp-setup.md)**  
 Guía deploy completa: **[docs/demo-deploy.md](docs/demo-deploy.md)**
-
-Regenerar capturas: `pnpm screenshots` (requiere `DEMO_USER_PASSWORD` en `.env`).
 
 ## Docker Compose
 
@@ -172,7 +170,7 @@ Ver [SECURITY.md](SECURITY.md) para reportar vulnerabilidades y buenas práctica
 - **Backend:** Cloud Run — [infra/terraform/README.md](infra/terraform/README.md)
 - **Frontend:** Vercel — [docs/demo-deploy.md](docs/demo-deploy.md)
 
-Script usuarios demo (local, carpeta `scripts/` no versionada): `node scripts/setup-demo-users.mjs`
+Script usuarios demo: crear cuentas `demo-a@test.com` / `demo-b@test.com` en Supabase Auth con la misma contraseña que `DEMO_USER_PASSWORD` y ejecutar el seed SQL.
 
 ## Funcionalidades MVP
 

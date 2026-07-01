@@ -19,12 +19,6 @@ const DemoLoginSchema = z.object({
     }),
 });
 
-export async function GET() {
-  return NextResponse.json({
-    configured: Boolean(process.env.DEMO_USER_PASSWORD?.length),
-  });
-}
-
 export async function POST(request: Request) {
   const ip = getClientIp(request);
   const limited = checkRateLimit(
