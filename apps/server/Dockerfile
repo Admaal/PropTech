@@ -1,10 +1,8 @@
-# ponytail: build desde raíz del monorepo (context: .)
 FROM node:22-alpine AS builder
 RUN corepack enable
 WORKDIR /app
 
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json tsconfig.base.json ./
-# ponytail: hoisted linker evita fallos de resolución TS en Alpine + pnpm isolated
 RUN printf "node-linker=hoisted\n" > .npmrc
 COPY packages/shared ./packages/shared
 COPY apps/server ./apps/server

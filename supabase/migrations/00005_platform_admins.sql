@@ -9,7 +9,7 @@ ALTER TABLE platform_admins ENABLE ROW LEVEL SECURITY;
 CREATE POLICY platform_admins_select ON platform_admins
   FOR SELECT USING (user_id = auth.uid());
 
--- ponytail: reutiliza user_organization_ids() en todas las políticas RLS existentes.
+-- Reutiliza user_organization_ids() en todas las políticas RLS existentes.
 CREATE OR REPLACE FUNCTION user_organization_ids()
 RETURNS SETOF UUID
 LANGUAGE sql

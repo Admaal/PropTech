@@ -1,6 +1,6 @@
 -- Endurecimiento Security Advisor (PostGIS + helpers internos)
 
--- ponytail: spatial_ref_sys es catálogo EPSG de PostGIS (sin datos de tenant).
+-- spatial_ref_sys es catálogo EPSG de PostGIS (sin datos de tenant).
 -- No somos owner (supabase_admin) → no podemos ENABLE RLS; revocamos acceso API.
 REVOKE ALL ON TABLE public.spatial_ref_sys FROM anon, authenticated, PUBLIC;
 

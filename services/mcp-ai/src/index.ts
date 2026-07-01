@@ -27,7 +27,6 @@ function verifyInternal(req: express.Request, res: express.Response): boolean {
   return true;
 }
 
-// ponytail: fire-and-forget — el gateway no espera la inferencia
 app.post("/analyze", (req, res) => {
   if (!verifyInternal(req, res)) return;
 

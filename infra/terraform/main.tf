@@ -101,7 +101,6 @@ resource "google_cloud_run_v2_service" "server" {
 resource "google_cloud_run_v2_service" "mcp_ai" {
   name     = "proptech-mcp-ai"
   location = var.region
-  # ponytail: ALL + IAM run.invoker (solo compute SA) — evita 404 en invocación server→mcp.
   ingress  = "INGRESS_TRAFFIC_ALL"
 
   template {

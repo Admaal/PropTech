@@ -58,7 +58,6 @@ export const PropertyListItemSchema = PropertySchema.extend({
 });
 export type PropertyListItem = z.infer<typeof PropertyListItemSchema>;
 
-// ponytail: los LLM suelen devolver null en campos opcionales; normalizamos a undefined.
 const aiOptionalString = z
   .union([z.string(), z.null()])
   .optional()

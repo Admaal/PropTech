@@ -1,5 +1,5 @@
 -- C1: org_members_insert permitía a cualquier member insertar admins o user_ids arbitrarios.
--- ponytail: signup sigue vía handle_new_user (SECURITY DEFINER); invitaciones solo admin → member.
+-- Signup sigue vía handle_new_user (SECURITY DEFINER); invitaciones solo admin → member.
 
 DROP POLICY IF EXISTS org_members_insert ON organization_members;
 

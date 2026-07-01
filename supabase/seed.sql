@@ -9,7 +9,6 @@ INSERT INTO organizations (id, name) VALUES
 ON CONFLICT (id) DO NOTHING;
 
 -- Propiedades Org A - Inmobiliaria Centro (12)
--- ponytail: risk_level es etiqueta DEMO para el mapa/filtros, no scoring real.
 -- Criterio simplificado del seed: bajo = alquiler alto; alto = alquiler bajo (~700-900€).
 -- Coincide a menudo con barrios periféricos porque allí el alquiler es más barato.
 INSERT INTO properties (organization_id, title, address, city, price_monthly, sqm, bedrooms, risk_level, latitude, longitude) VALUES
