@@ -128,16 +128,26 @@ Levanta server (`:3001`), mcp-ai (`:3002`) y web (`:3000`). Requiere `.env` conf
 
 ```bash
 pnpm --filter @proptech/server test
-pnpm test:e2e
+pnpm test:e2e          # smoke + upload mockeado (sin cuota ni IA)
+pnpm test:e2e:full     # admin + upload real + IA (manual o workflow semanal)
 ```
 
-Incluye aislamiento RLS entre `demo-a` y `demo-b`, validación de PDF/cuotas y E2E Playwright (login → subir PDF → ver resultado).
+Incluye aislamiento RLS entre `demo-a` y `demo-b`, validación de PDF/cuotas y E2E Playwright en dos capas:
 
-Variables E2E: `DEMO_USER_PASSWORD` (obligatoria), `E2E_BASE_URL` (opcional, default `http://localhost:3000`).
+| Comando | Qué valida | Cuándo |
+|---------|------------|--------|
+| `pnpm test:e2e` | Login, dashboard, ficha, flujo UI de upload **mockeado** | CI en cada push a `main` |
+| `pnpm test:e2e:full` | Upload real + análisis IA completo (cuenta admin) | Manual o workflow semanal |
+
+Variables E2E: `DEMO_USER_PASSWORD` (CI), `E2E_BASE_URL` (opcional), `PLATFORM_ADMIN_PASSWORD` (full-stack).
 
 ## CI
 
 GitHub Actions (`.github/workflows/ci.yml`): build, typecheck y tests en cada push/PR.
+
+E2E en push a `main`: smoke + upload mockeado (sin consumir cuota demo ni Gemini).
+
+Full-stack con IA real: workflow manual/semanal `.github/workflows/e2e-full-stack.yml` (requiere secret `PLATFORM_ADMIN_PASSWORD`).
 
 Para tests RLS en CI, configura secrets `SUPABASE_URL` y `SUPABASE_ANON_KEY`.
 

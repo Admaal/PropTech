@@ -1,0 +1,35 @@
+name: E2E Full Stack
+
+on:
+  workflow_dispatch:
+  schedule:
+    # Lunes 06:00 UTC — validación punta a punta con IA real (fuera del CI por push)
+    - cron: "0 6 * * 1"
+
+jobs:
+  e2e-full:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright Chromium
+        run: pnpm exec playwright install chromium --with-deps
+
+      - name: E2E full-stack — upload real + IA
+        run: pnpm test:e2e:full
+        env:
+          E2E_BASE_URL: ${{ secrets.E2E_BASE_URL }}
+          PLATFORM_ADMIN_PASSWORD: ${{ secrets.PLATFORM_ADMIN_PASSWORD }}
+          E2E_ADMIN_EMAIL: ${{ secrets.E2E_ADMIN_EMAIL }}

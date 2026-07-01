@@ -6,7 +6,8 @@
     "build": "pnpm run -r build",
     "lint": "pnpm run -r lint",
     "typecheck": "pnpm run -r typecheck",
-    "test:e2e": "playwright test",
+    "test:e2e": "playwright test --grep-invert @full-stack",
+    "test:e2e:full": "playwright test --grep @full-stack",
     "screenshots": "node scripts/capture-screenshots.mjs"
   },
   "engines": {

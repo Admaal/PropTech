@@ -25,7 +25,7 @@
 | RNF-04 | Zod en inputs/outputs; schemas en `packages/shared` | ✅ |
 | RNF-05 | Tests de aislamiento RLS cross-org | ✅ |
 | RNF-06 | Cuotas y rate limits en demo; platform admin exento | ✅ |
-| RNF-07 | E2E Playwright: login → upload PDF → resultado (opcional en CI) | ✅ |
+| RNF-07 | E2E Playwright: smoke en CI; upload mockeado; full-stack admin semanal | ✅ |
 
 ## Demo pública
 
