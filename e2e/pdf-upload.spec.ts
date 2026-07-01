@@ -18,11 +18,17 @@ test.beforeEach(({}, testInfo) => {
 test("login demo → subir PDF → ver análisis completado", async ({ page }) => {
   await page.goto("/login");
 
-  await page
-    .getByRole("button", { name: /Demo A — Inmobiliaria Centro/i })
-    .click();
+  // Credenciales del secret de CI; no depende de NEXT_PUBLIC_DEMO_PASSWORD en Vercel.
+  await page.getByText("Iniciar sesión manualmente").click();
+  await page.locator("#email").fill("demo-a@test.com");
+  await page.locator("#password").fill(demoPassword);
+  await page.getByRole("button", { name: "Iniciar sesión" }).click();
 
   await expect(page).toHaveURL(/\/dashboard/, { timeout: 30_000 });
+
+  await expect(page.getByText(/\d+ inmuebles? encontrados/)).toBeVisible({
+    timeout: 30_000,
+  });
 
   const firstProperty = page.locator('a[href^="/properties/"]').first();
   await expect(firstProperty).toBeVisible({ timeout: 15_000 });

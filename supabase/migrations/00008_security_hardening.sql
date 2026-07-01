@@ -30,8 +30,9 @@ BEGIN
 END;
 $$;
 
--- Lint 0028/0029: helpers internos no deben ser RPC públicas
-REVOKE EXECUTE ON FUNCTION public.user_organization_ids() FROM PUBLIC, anon, authenticated;
+-- Lint 0028/0029: helpers internos no deben ser RPC públicas (anon/PUBLIC).
+-- authenticated conserva EXECUTE: lo exigen las políticas RLS (ver 00009 si se revoca por error).
+REVOKE EXECUTE ON FUNCTION public.user_organization_ids() FROM PUBLIC, anon;
 REVOKE EXECUTE ON FUNCTION public.handle_new_user() FROM PUBLIC, anon, authenticated;
 
 -- PostGIS: funciones no usadas por la app vía REST
