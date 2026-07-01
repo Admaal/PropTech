@@ -1,8 +1,11 @@
-import { test, expect } from "@playwright/test";
+import { test, expect, type Page } from "@playwright/test";
 import path from "node:path";
 
 const samplePdf = path.join(process.cwd(), "e2e", "fixtures", "sample.pdf");
 const demoPassword = process.env.DEMO_USER_PASSWORD ?? "";
+
+/** demo-b primero: demo-a suele agotar la cuota de 3 análisis/día en CI. */
+const DEMO_EMAILS = ["demo-b@test.com", "demo-a@test.com"] as const;
 
 test.beforeEach(({}, testInfo) => {
   test.skip(
@@ -15,36 +18,74 @@ test.beforeEach(({}, testInfo) => {
   );
 });
 
-test("login demo → subir PDF → ver análisis completado", async ({ page }) => {
+async function loginDemo(page: Page, email: string) {
   await page.goto("/login");
-
-  // Credenciales del secret de CI; no depende de NEXT_PUBLIC_DEMO_PASSWORD en Vercel.
   await page.getByText("Iniciar sesión manualmente").click();
-  await page.locator("#email").fill("demo-a@test.com");
+  await page.locator("#email").fill(email);
   await page.locator("#password").fill(demoPassword);
   await page.getByRole("button", { name: "Iniciar sesión" }).click();
-
   await expect(page).toHaveURL(/\/dashboard/, { timeout: 30_000 });
-
   await expect(page.getByText(/\d+ inmuebles? encontrados/)).toBeVisible({
     timeout: 30_000,
   });
+}
 
+async function openFirstProperty(page: Page) {
   const firstProperty = page.locator('a[href^="/properties/"]').first();
   await expect(firstProperty).toBeVisible({ timeout: 15_000 });
   await firstProperty.click();
-
   await expect(page).toHaveURL(/\/properties\//, { timeout: 15_000 });
-
   await page
     .getByRole("heading", { name: "Documentación del inquilino" })
     .scrollIntoViewIfNeeded();
+}
 
-  const fileInput = page.locator('input[type="file"][accept="application/pdf"]');
-  await fileInput.setInputFiles(samplePdf, { force: true });
+async function uploadSamplePdf(page: Page) {
+  const [fileChooser] = await Promise.all([
+    page.waitForEvent("filechooser"),
+    page.getByText("Seleccionar archivo").click(),
+  ]);
+  await fileChooser.setFiles(samplePdf);
+}
+
+test("login demo → subir PDF → ver análisis completado", async ({ page }) => {
+  let uploadAccepted = false;
+
+  for (const email of DEMO_EMAILS) {
+    await loginDemo(page, email);
+    await openFirstProperty(page);
+
+    const uploadResponse = page.waitForResponse(
+      (res) =>
+        res.url().includes("/api/v1/documents") &&
+        res.request().method() === "POST",
+      { timeout: 60_000 },
+    );
+
+    await uploadSamplePdf(page);
+    const response = await uploadResponse;
+
+    if (response.status() === 429) {
+      continue;
+    }
+
+    expect(
+      response.ok(),
+      `Upload falló (${response.status()}) con ${email}`,
+    ).toBe(true);
+    uploadAccepted = true;
+    break;
+  }
+
+  expect(
+    uploadAccepted,
+    "Ninguna cuenta demo tiene cuota disponible (3 análisis/día por organización)",
+  ).toBe(true);
 
   await expect(
-    page.getByText(/Documento recibido|Analizando con IA|Análisis completado/i),
+    page.getByText(
+      /Documento recibido|Subiendo PDF|Analizando con IA|Análisis completado/i,
+    ),
   ).toBeVisible({ timeout: 30_000 });
 
   const historyToggle = page
