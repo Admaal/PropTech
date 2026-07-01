@@ -16,16 +16,16 @@
     "@google/generative-ai": "^0.24.0",
     "@modelcontextprotocol/sdk": "^1.12.1",
     "@proptech/shared": "workspace:*",
-    "@supabase/supabase-js": "^2.49.1",
-    "dotenv": "^16.4.7",
-    "express": "^4.21.2",
-    "zod": "^3.24.2"
+    "@supabase/supabase-js": "^2.110.0",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@types/express": "^5.0.0",
     "@types/node": "^22.13.10",
     "tsx": "^4.19.3",
     "typescript": "^5.8.2",
-    "vitest": "^3.0.9"
+    "vitest": "^4.1.9"
   }
 }
