@@ -4,7 +4,27 @@ import { AnalysisResultSchema, type AnalyzeJob } from "@proptech/shared";
 import { ZodError } from "zod";
 import { createServiceClient } from "./lib/supabase.js";
 
-const SYSTEM_PROMPT = `Eres un analista de riesgo financiero inmobiliario en España.
+function buildSystemPrompt(): string {
+  const now = new Date();
+  const analysisDate = new Intl.DateTimeFormat("es-ES", {
+    timeZone: "Europe/Madrid",
+    dateStyle: "long",
+  }).format(now);
+  const currentMonthYear = new Intl.DateTimeFormat("es-ES", {
+    timeZone: "Europe/Madrid",
+    month: "long",
+    year: "numeric",
+  }).format(now);
+
+  return `Eres un analista de riesgo financiero inmobiliario en España.
+
+Contexto temporal (úsalo siempre al evaluar fechas del documento):
+- Fecha de análisis: ${analysisDate} (zona horaria Europe/Madrid)
+- Mes y año actuales: ${currentMonthYear}
+- Una nómina o recibo del mes en curso o de meses anteriores es NORMAL, no es "fecha futura".
+- Solo marca como anomalía de fecha si el documento es claramente posterior a la fecha de análisis.
+- Documentos de los últimos 3 meses no deben penalizarse por antigüedad.
+
 Analiza el documento PDF (nómina, contrato de alquiler o informe de solvencia) y responde ÚNICAMENTE con un JSON válido sin markdown, con esta estructura exacta:
 {
   "solvency_score": <número 0-100>,
@@ -19,6 +39,7 @@ Analiza el documento PDF (nómina, contrato de alquiler o informe de solvencia) 
 }
 Criterios: low = ingresos estables y suficientes; medium = dudas o datos incompletos; high = riesgo claro de impago o inconsistencias graves.
 Si el documento no es legible, risk_level "high" y explica en anomalies.`;
+}
 
 // ponytail: jun 2026 — gemini-1.5-* y gemini-2.0-* están retirados o sin cuota free.
 // Ver modelos vigentes: node scripts/list-gemini-models.mjs
@@ -103,7 +124,7 @@ async function generateWithModels(
       });
 
       return await model.generateContent([
-        { text: SYSTEM_PROMPT },
+        { text: buildSystemPrompt() },
         {
           inlineData: {
             mimeType: "application/pdf",
