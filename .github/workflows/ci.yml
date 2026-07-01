@@ -1,0 +1,50 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build shared package
+        run: pnpm --filter @proptech/shared build
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Server tests (RLS)
+        run: pnpm --filter @proptech/server test
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          DEMO_USER_PASSWORD: ${{ secrets.DEMO_USER_PASSWORD }}
+
+      - name: Build server
+        run: pnpm --filter @proptech/server build
+
+      - name: Build mcp-ai
+        run: pnpm --filter @proptech/mcp-ai build
+
+      - name: Build web
+        run: pnpm --filter @proptech/web build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder
+          NEXT_PUBLIC_API_URL: http://localhost:3001
