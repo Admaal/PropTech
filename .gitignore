@@ -1,0 +1,72 @@
+# Dependencias y builds
+node_modules/
+dist/
+.next/
+.turbo/
+out/
+build/
+*.tsbuildinfo
+
+# Variables de entorno y secretos
+.env
+.env.local
+.env.*.local
+.env.development
+.env.production
+.env.test
+!.env.example
+
+# Credenciales
+*.pem
+*.key
+*.p12
+credentials.json
+*-credentials.json
+service-account*.json
+secrets/
+
+# Logs y caché
+*.log
+npm-debug.log*
+pnpm-debug.log*
+.cache/
+
+# SO / editor / IDE local
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+.cursor/
+
+# Scripts locales con IDs reales (usar .example del repo)
+supabase/scripts/link-demo-users.sql
+*.swp
+*.swo
+
+# Tests
+coverage/
+test-results/
+playwright-report/
+
+# Terraform (estado local; no subir secretos)
+.terraform/
+*.tfstate
+*.tfstate.*
+infra/terraform/terraform.tfvars
+crash.log
+*.tfplan
+tfplan
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Deploy local
+.vercel/
+
+# Supabase CLI local
+supabase/.temp/
+supabase/.branches/
+
+# Scripts locales (no versionar; ya trackeados requieren git rm --cached)
+scripts/

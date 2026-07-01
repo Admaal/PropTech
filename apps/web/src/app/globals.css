@@ -1,0 +1,92 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  --color-default-violet: #5757f8;
+  --color-ink-black: #202020;
+  --color-carbon: #333333;
+  --color-frost: #f5f5f5;
+  --color-paper-white: #ffffff;
+
+  --background: var(--color-frost);
+  --foreground: var(--color-ink-black);
+  --card: var(--color-paper-white);
+  --card-foreground: var(--color-ink-black);
+  --primary: var(--color-default-violet);
+  --primary-foreground: var(--color-paper-white);
+  --muted: #ebebeb;
+  --muted-foreground: var(--color-carbon);
+  --border: var(--color-ink-black);
+  --input: var(--color-ink-black);
+  --ring: var(--color-default-violet);
+  --radius: 8px;
+}
+
+.dark {
+  --color-frost: #0f0f0f;
+  --color-paper-white: #1a1a1a;
+  --color-ink-black: #f0f0f0;
+  --color-carbon: #a3a3a3;
+
+  --background: #121212;
+  --foreground: #f0f0f0;
+  --card: #1a1a1a;
+  --card-foreground: #f0f0f0;
+  --muted: #262626;
+  --muted-foreground: #a3a3a3;
+  --border: #3a3a3a;
+  --input: #3a3a3a;
+  --primary-foreground: #ffffff;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-frost: var(--color-frost);
+  --color-carbon: var(--color-carbon);
+  --color-violet: var(--color-default-violet);
+  --radius-lg: var(--radius);
+  --font-sans: var(--font-geist-sans);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+}
+
+.leaflet-popup-content-wrapper {
+  border-radius: 8px;
+}
+
+/* Mapa embebido: siempre estilo claro aunque la app esté en dark */
+.property-map-surface .leaflet-popup-content-wrapper,
+.property-map-surface .leaflet-popup-tip {
+  background: #fff;
+  color: #202020;
+}
+
+.property-map-surface .leaflet-control-zoom a {
+  background: #fff;
+  color: #202020;
+  border-color: #ccc;
+}
+
+.property-map-surface .leaflet-control-attribution {
+  background: rgb(255 255 255 / 80%);
+  color: #333;
+}
+
+.property-map-surface .leaflet-control-attribution a {
+  color: #333;
+}

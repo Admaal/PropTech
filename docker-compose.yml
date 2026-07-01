@@ -1,0 +1,42 @@
+services:
+  server:
+    build:
+      context: .
+      dockerfile: apps/server/Dockerfile
+    ports:
+      - "3001:3001"
+    env_file:
+      - .env
+    environment:
+      - API_PORT=3001
+      - MCP_SERVER_URL=http://mcp-ai:3002
+      - DAILY_ANALYSIS_QUOTA=${DAILY_ANALYSIS_QUOTA:-0}
+      - RATE_LIMIT_WINDOW_MS=${RATE_LIMIT_WINDOW_MS:-900000}
+      - RATE_LIMIT_MAX=${RATE_LIMIT_MAX:-100}
+      - UPLOAD_RATE_LIMIT_MAX=${UPLOAD_RATE_LIMIT_MAX:-5}
+
+  mcp-ai:
+    build:
+      context: .
+      dockerfile: services/mcp-ai/Dockerfile
+    ports:
+      - "3002:3002"
+    env_file:
+      - .env
+    environment:
+      - MCP_PORT=3002
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      args:
+        NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL}
+        NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY}
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3001}
+    ports:
+      - "3000:3000"
+    depends_on:
+      - server
+    environment:
+      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:3001}

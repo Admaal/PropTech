@@ -1,0 +1,17 @@
+node_modules
+.git
+.github
+**/.next
+**/dist
+**/*.tsbuildinfo
+**/.env
+**/.env.*
+!**/.env.example
+*.md
+.cursor
+terminals
+agent-transcripts
+mcps
+**/*.test.ts
+coverage
+.terraform

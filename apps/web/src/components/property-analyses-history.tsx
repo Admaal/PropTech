@@ -1,0 +1,203 @@
+"use client";
+
+import { useCallback, useEffect, useRef, useState } from "react";
+import type { DocumentAnalysis, DocumentAnalysisWithFilename, RiskLevel } from "@proptech/shared";
+import { fetchAnalyses } from "@/lib/api";
+import { createClient } from "@/lib/supabase/client";
+import { AnalysisPanel } from "@/components/analysis-panel";
+import { riskBadgeClasses } from "@/lib/ui-styles";
+
+const statusLabels: Record<string, string> = {
+  pending: "En cola",
+  processing: "Procesando",
+  completed: "Completado",
+  failed: "Fallido",
+};
+
+const riskLabels: Record<RiskLevel, string> = {
+  low: "Bajo",
+  medium: "Medio",
+  high: "Alto",
+};
+
+function formatDate(iso: string): string {
+  return new Date(iso).toLocaleString("es-ES", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+interface PropertyAnalysesHistoryProps {
+  propertyId: string;
+  initialAnalyses?: DocumentAnalysisWithFilename[];
+  refreshKey?: number;
+  activeAnalysisId?: string | null;
+  onActiveAnalysisComplete?: () => void;
+  onActiveAnalysisFailed?: () => void;
+}
+
+export function PropertyAnalysesHistory({
+  propertyId,
+  initialAnalyses = [],
+  refreshKey = 0,
+  activeAnalysisId = null,
+  onActiveAnalysisComplete,
+  onActiveAnalysisFailed,
+}: PropertyAnalysesHistoryProps) {
+  const [analyses, setAnalyses] =
+    useState<DocumentAnalysisWithFilename[]>(initialAnalyses);
+  const [manualExpandedId, setManualExpandedId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const notifiedRef = useRef<string | null>(null);
+
+  const expandedId = activeAnalysisId ?? manualExpandedId;
+
+  useEffect(() => {
+    notifiedRef.current = null;
+  }, [activeAnalysisId]);
+
+  const syncAnalysis = useCallback((updated: DocumentAnalysis) => {
+    setAnalyses((prev) =>
+      prev.map((item) =>
+        item.id === updated.id ? { ...item, ...updated } : item,
+      ),
+    );
+  }, []);
+
+  useEffect(() => {
+    if (refreshKey === 0 && initialAnalyses.length > 0) return;
+
+    let cancelled = false;
+
+    void (async () => {
+      setLoading(true);
+      try {
+        const supabase = createClient();
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+        if (!session || cancelled) return;
+        const data = await fetchAnalyses(session.access_token, propertyId);
+        if (!cancelled) setAnalyses(data);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [propertyId, refreshKey, initialAnalyses.length]);
+
+  useEffect(() => {
+    if (!activeAnalysisId) return;
+    const active = analyses.find((a) => a.id === activeAnalysisId);
+    if (!active) return;
+
+    if (active.status === "completed") {
+      const key = `${activeAnalysisId}:completed`;
+      if (notifiedRef.current === key) return;
+      notifiedRef.current = key;
+      onActiveAnalysisComplete?.();
+    }
+
+    if (active.status === "failed") {
+      const key = `${activeAnalysisId}:failed`;
+      if (notifiedRef.current === key) return;
+      notifiedRef.current = key;
+      onActiveAnalysisFailed?.();
+    }
+  }, [analyses, activeAnalysisId, onActiveAnalysisComplete, onActiveAnalysisFailed]);
+
+  return (
+    <section className="mt-8 border-t border-border pt-8">
+      <div className="mb-4 flex items-center justify-between">
+        <h3 className="text-sm font-medium">Historial de análisis</h3>
+        {loading && (
+          <span className="text-xs text-muted-foreground">Actualizando…</span>
+        )}
+      </div>
+
+      {analyses.length === 0 && !activeAnalysisId ? (
+        <p className="rounded-lg border border-border bg-muted/30 px-4 py-6 text-center text-sm text-muted-foreground">
+          Aún no hay análisis para este inmueble. Sube un PDF arriba para
+          empezar.
+        </p>
+      ) : (
+        <ul className="space-y-3">
+          {activeAnalysisId &&
+            !analyses.some((a) => a.id === activeAnalysisId) && (
+              <li className="overflow-hidden rounded-lg border border-border bg-card">
+                <div className="border-b border-border px-4 py-3 text-sm font-medium">
+                  Análisis en curso…
+                </div>
+                <div className="p-4">
+                  <AnalysisPanel
+                    key={activeAnalysisId}
+                    analysisId={activeAnalysisId}
+                    onUpdate={syncAnalysis}
+                  />
+                </div>
+              </li>
+            )}
+          {analyses.map((a) => {
+            const expanded = expandedId === a.id;
+            return (
+              <li
+                key={a.id}
+                className="overflow-hidden rounded-lg border border-border bg-card"
+              >
+                <button
+                  type="button"
+                  onClick={() =>
+                    setManualExpandedId(expanded ? null : a.id)
+                  }
+                  className="flex w-full items-center justify-between gap-4 px-4 py-3 text-left text-sm hover:bg-muted/30"
+                >
+                  <div className="min-w-0">
+                    <p className="truncate font-medium">
+                      {a.filename ?? "Documento PDF"}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {formatDate(a.created_at)} · {statusLabels[a.status]}
+                    </p>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-2">
+                    {a.risk_level && (
+                      <span
+                        className={`rounded-full border px-2 py-0.5 text-xs ${riskBadgeClasses[a.risk_level]}`}
+                      >
+                        {riskLabels[a.risk_level]}
+                      </span>
+                    )}
+                    {a.solvency_score != null && (
+                      <span className="text-xs font-medium">
+                        {a.solvency_score}/100
+                      </span>
+                    )}
+                    <span className="text-muted-foreground">
+                      {expanded ? "▲" : "▼"}
+                    </span>
+                  </div>
+                </button>
+                {expanded && (
+                  <div className="border-t border-border p-4">
+                    <AnalysisPanel
+                      key={a.id}
+                      analysisId={a.id}
+                      seed={a}
+                      onUpdate={syncAnalysis}
+                    />
+                  </div>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </section>
+  );
+}
