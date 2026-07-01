@@ -42,7 +42,11 @@ export function AnalysisPanel({ analysisId }: AnalysisPanelProps) {
       setError(null);
       return data.status;
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Error al cargar análisis");
+      const msg = e instanceof Error ? e.message : "Error al cargar análisis";
+      setError(msg);
+      if (msg.includes("Demasiadas peticiones")) {
+        return "pending" as const;
+      }
       return "failed" as const;
     }
   }, [analysisId]);
@@ -50,12 +54,15 @@ export function AnalysisPanel({ analysisId }: AnalysisPanelProps) {
   useEffect(() => {
     let active = true;
     let timer: ReturnType<typeof setTimeout>;
+    let intervalMs = 2000;
 
     const tick = async () => {
       const status = await poll();
       if (!active) return;
       if (status === "pending" || status === "processing") {
-        timer = setTimeout(tick, 2000);
+        // Backoff hasta 10s si el análisis tarda (evita rate limit en colas largas)
+        intervalMs = Math.min(intervalMs * 1.2, 10000);
+        timer = setTimeout(tick, intervalMs);
       }
     };
 

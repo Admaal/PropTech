@@ -110,7 +110,8 @@ resource "google_cloud_run_v2_service" "server" {
 resource "google_cloud_run_v2_service" "mcp_ai" {
   name     = "proptech-mcp-ai"
   location = var.region
-  ingress  = "INGRESS_TRAFFIC_INTERNAL_ONLY"
+  # ponytail: ALL + IAM run.invoker (solo compute SA) — evita 404 en invocación server→mcp.
+  ingress  = "INGRESS_TRAFFIC_ALL"
 
   template {
     containers {
@@ -182,6 +183,18 @@ resource "google_cloud_run_v2_service_iam_member" "server_public" {
   name     = google_cloud_run_v2_service.server.name
   role     = "roles/run.invoker"
   member   = "allUsers"
+}
+
+resource "google_cloud_run_v2_service_iam_member" "mcp_ai_server_invoker" {
+  project  = var.project_id
+  location = var.region
+  name     = google_cloud_run_v2_service.mcp_ai.name
+  role     = "roles/run.invoker"
+  member   = "serviceAccount:${data.google_project.current.number}-compute@developer.gserviceaccount.com"
+}
+
+data "google_project" "current" {
+  project_id = var.project_id
 }
 
 # Secret Manager — crear secretos manualmente antes de apply (ver README)

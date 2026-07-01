@@ -16,6 +16,9 @@ export const globalRateLimiter = rateLimit({
   max: serverConfig.rateLimitMax,
   standardHeaders: true,
   legacyHeaders: false,
+  // ponytail: polling de análisis cada 2s agotaba 100 req/15 min mientras pending.
+  skip: (req) =>
+    req.method === "GET" && req.path.startsWith("/api/v1/analyses"),
   message: {
     error: {
       code: "RATE_LIMITED",
