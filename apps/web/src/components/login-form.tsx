@@ -60,7 +60,9 @@ export function LoginForm({ demoEnabled }: LoginFormProps) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: demoEmail }),
       });
-      const body = (await res.json()) as { error?: string };
+      const body = (await res.json().catch(() => ({}))) as {
+        error?: string;
+      };
 
       if (!res.ok) {
         setError(body.error ?? "Error al iniciar sesión demo");

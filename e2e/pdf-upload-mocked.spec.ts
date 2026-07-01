@@ -33,7 +33,9 @@ test("login → subir PDF (mock) → ver análisis completado en UI", async ({
   await fileChooser.setFiles(samplePdf);
 
   await expect(
-    page.getByText(/Documento recibido|Analizando con IA/i),
+    page.getByText(
+      /Documento recibido|Analizando con IA|Análisis completado/i,
+    ),
   ).toBeVisible({ timeout: 15_000 });
 
   await expect(

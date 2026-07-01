@@ -4,6 +4,9 @@ import { NextResponse, type NextRequest } from "next/server";
 const PUBLIC_PATHS = ["/", "/login"] as const;
 
 function isPublicPath(pathname: string): boolean {
+  if (pathname === "/api/demo-login" || pathname.startsWith("/api/demo-login/")) {
+    return true;
+  }
   return PUBLIC_PATHS.some(
     (path) => pathname === path || pathname.startsWith(`${path}/`),
   );
