@@ -152,7 +152,15 @@ E2E smoke + upload mockeado en push a `main` y en **pull requests del mismo repo
 
 Full-stack con IA real: workflow manual/semanal `.github/workflows/e2e-full-stack.yml` (requiere secret `PLATFORM_ADMIN_PASSWORD`).
 
-Para tests RLS en CI (push a `main`), configura secrets `SUPABASE_URL`, `SUPABASE_ANON_KEY` y `DEMO_USER_PASSWORD`.
+Para tests RLS en CI, configura en GitHub **Settings → Secrets and variables → Actions**:
+
+| Secret / variable | Uso |
+|-------------------|-----|
+| `SUPABASE_URL` o variable `NEXT_PUBLIC_SUPABASE_URL` | URL del proyecto Supabase |
+| `SUPABASE_ANON_KEY` o variable `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Anon key (pública; puede ser variable) |
+| `DEMO_USER_PASSWORD` | Login demo-a / demo-b en tests RLS y E2E |
+
+Si no configuras ninguno, los tests RLS se omiten y el resto del CI sigue pasando. Si configuras solo algunos, el CI falla con un mensaje claro.
 
 ## Seguridad
 
