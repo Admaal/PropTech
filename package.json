@@ -11,7 +11,7 @@
     "screenshots": "node scripts/capture-screenshots.mjs"
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=22"
   },
   "pnpm": {
     "onlyBuiltDependencies": [

@@ -11,7 +11,7 @@ export function errorHandler(
     res.status(400).json({
       error: {
         code: "VALIDATION_ERROR",
-        message: err.errors.map((e) => e.message).join(", "),
+        message: err.issues.map((issue) => issue.message).join(", "),
       },
     });
     return;
