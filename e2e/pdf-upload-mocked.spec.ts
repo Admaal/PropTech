@@ -45,5 +45,7 @@ test("login → subir PDF (mock) → ver análisis completado en UI", async ({
   await expect(page.getByText("Resultado del análisis")).toBeVisible({
     timeout: 15_000,
   });
-  await expect(page.getByText(/Riesgo Bajo/i)).toBeVisible();
+  await expect(
+    page.locator("#documentacion").getByText(/Riesgo Bajo/i),
+  ).toBeVisible();
 });
