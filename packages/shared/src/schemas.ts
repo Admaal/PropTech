@@ -39,6 +39,8 @@ export const PropertySchema = z.object({
   risk_level: RiskLevelSchema.nullable(),
   latitude: z.number().nullable(),
   longitude: z.number().nullable(),
+  description: z.string().nullable().optional(),
+  image_urls: z.array(z.string().url()).default([]),
   created_at: z.string(),
 });
 export type Property = z.infer<typeof PropertySchema>;
@@ -146,6 +148,7 @@ export type AnalyzeJob = z.infer<typeof AnalyzeJobSchema>;
 
 export const DocumentAnalysisWithFilenameSchema = DocumentAnalysisSchema.extend({
   filename: z.string().nullable().optional(),
+  property_id: z.string().uuid().nullable().optional(),
 });
 export type DocumentAnalysisWithFilename = z.infer<
   typeof DocumentAnalysisWithFilenameSchema

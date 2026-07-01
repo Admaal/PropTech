@@ -3,33 +3,36 @@
 import { useCallback, useState } from "react";
 import { uploadDocument, ApiError } from "@/lib/api";
 import { createClient } from "@/lib/supabase/client";
-import { AnalysisPanel } from "@/components/analysis-panel";
-
-import { alertErrorClasses, alertSuccessClasses } from "@/lib/ui-styles";
+import { alertErrorClasses } from "@/lib/ui-styles";
 
 interface DocumentDropzoneProps {
   propertyId: string;
   onUploaded?: (analysisId: string) => void;
+  onError?: (message: string) => void;
 }
 
 type UploadState = "idle" | "dragging" | "uploading" | "success" | "error";
 
-export function DocumentDropzone({ propertyId, onUploaded }: DocumentDropzoneProps) {
+export function DocumentDropzone({
+  propertyId,
+  onUploaded,
+  onError,
+}: DocumentDropzoneProps) {
   const [state, setState] = useState<UploadState>("idle");
-  const [message, setMessage] = useState<string | null>(null);
-  const [analysisId, setAnalysisId] = useState<string | null>(null);
+  const [localError, setLocalError] = useState<string | null>(null);
 
   const handleFile = useCallback(
     async (file: File) => {
       if (file.type !== "application/pdf") {
         setState("error");
-        setMessage("Solo se permiten archivos PDF");
+        const msg = "Solo se permiten archivos PDF";
+        setLocalError(msg);
+        onError?.(msg);
         return;
       }
 
       setState("uploading");
-      setMessage(null);
-      setAnalysisId(null);
+      setLocalError(null);
 
       try {
         const supabase = createClient();
@@ -39,7 +42,9 @@ export function DocumentDropzone({ propertyId, onUploaded }: DocumentDropzonePro
 
         if (!session) {
           setState("error");
-          setMessage("Sesión expirada. Vuelve a iniciar sesión.");
+          const msg = "Sesión expirada. Vuelve a iniciar sesión.";
+          setLocalError(msg);
+          onError?.(msg);
           return;
         }
 
@@ -48,22 +53,20 @@ export function DocumentDropzone({ propertyId, onUploaded }: DocumentDropzonePro
           propertyId,
           file,
         );
-        setAnalysisId(result.analysis_id);
         setState("success");
-        setMessage("Documento recibido. Analizando con IA…");
         onUploaded?.(result.analysis_id);
       } catch (e) {
         setState("error");
+        let msg = e instanceof Error ? e.message : "Error al subir";
         if (e instanceof ApiError && e.code === "QUOTA_EXCEEDED") {
-          setMessage(
-            "Límite diario alcanzado en la demo (3 análisis/día). Vuelve mañana o prueba con la otra cuenta demo.",
-          );
-          return;
+          msg =
+            "Límite diario alcanzado en la demo (3 análisis/día). Vuelve mañana o prueba con la otra cuenta demo.";
         }
-        setMessage(e instanceof Error ? e.message : "Error al subir");
+        setLocalError(msg);
+        onError?.(msg);
       }
     },
-    [propertyId, onUploaded],
+    [propertyId, onUploaded, onError],
   );
 
   const onDrop = useCallback(
@@ -117,23 +120,10 @@ export function DocumentDropzone({ propertyId, onUploaded }: DocumentDropzonePro
         )}
       </div>
 
-      {message && state !== "success" && (
-        <p
-          className={`rounded-lg border px-4 py-3 text-sm ${
-            state === "error" ? alertErrorClasses : alertSuccessClasses
-          }`}
-        >
-          {message}
+      {localError && state === "error" && (
+        <p className={`rounded-lg border px-4 py-3 text-sm ${alertErrorClasses}`}>
+          {localError}
         </p>
-      )}
-
-      {analysisId && (
-        <>
-          {state === "success" && (
-            <p className="text-sm text-muted-foreground">{message}</p>
-          )}
-          <AnalysisPanel analysisId={analysisId} />
-        </>
       )}
     </div>
   );

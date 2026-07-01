@@ -1,9 +1,11 @@
 import type { NextFunction, Request, Response } from "express";
 import { createUserClient } from "../lib/supabase.js";
+import { isPlatformAdmin } from "../lib/platform-admin.js";
 
 export interface AuthenticatedRequest extends Request {
   accessToken: string;
   userId: string;
+  isPlatformAdmin: boolean;
 }
 
 export async function authMiddleware(
@@ -32,5 +34,10 @@ export async function authMiddleware(
 
   (req as AuthenticatedRequest).accessToken = accessToken;
   (req as AuthenticatedRequest).userId = data.user.id;
+  (req as AuthenticatedRequest).isPlatformAdmin = await isPlatformAdmin(
+    supabase,
+    data.user.id,
+  );
+
   next();
 }

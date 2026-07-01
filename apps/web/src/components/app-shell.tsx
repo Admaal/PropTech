@@ -8,6 +8,7 @@ interface AppShellProps {
   subtitle?: string;
   backHref?: string;
   backLabel?: string;
+  showAdminLink?: boolean;
   children: React.ReactNode;
 }
 
@@ -16,6 +17,7 @@ export function AppShell({
   subtitle,
   backHref,
   backLabel,
+  showAdminLink = false,
   children,
 }: AppShellProps) {
   return (
@@ -55,6 +57,14 @@ export function AppShell({
             >
               Análisis
             </Link>
+            {showAdminLink && (
+              <Link
+                href="/admin"
+                className="hidden text-sm text-muted-foreground hover:text-foreground sm:inline"
+              >
+                Admin
+              </Link>
+            )}
             <ThemeToggle />
             <LogoutButton />
           </nav>

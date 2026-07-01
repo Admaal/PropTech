@@ -2,7 +2,13 @@
 
 Monorepo con frontend Next.js, API Express, Supabase (PostgreSQL + RLS + Auth) y servidor MCP para análisis de documentos con IA.
 
-**Demo en vivo:** _(añade aquí tu URL de Vercel tras el deploy, ej. `https://proptech.vercel.app`)_
+**Demo en vivo:** [https://proptech-web-kappa.vercel.app](https://proptech-web-kappa.vercel.app)
+
+## Capturas
+
+| Dashboard + mapa | Ficha con fotos e IA | Análisis PDF |
+|------------------|----------------------|--------------|
+| ![Dashboard con mapa y filtros](docs/screenshots/dashboard-mapa.png) | ![Ficha de propiedad](docs/screenshots/propiedad-analisis.png) | ![Resultado del análisis](docs/screenshots/upload-pdf.png) |
 
 ## Stack
 
@@ -94,6 +100,7 @@ El login muestra botones de acceso rápido para Demo A y Demo B. El registro no 
 | Registro de usuarios | Deshabilitado en Supabase |
 | Análisis IA | 3 por organización y día |
 | Subidas PDF | 5 por usuario y hora |
+| Platform admin | Sin cuota ni límite de subidas |
 | API global | 100 peticiones / 15 min por IP |
 | Archivos | Solo PDF válido (`%PDF-`), máx. 10 MB |
 
@@ -107,13 +114,7 @@ El login muestra botones de acceso rápido para Demo A y Demo B. El registro no 
 Guía GCP: **[docs/gcp-setup.md](docs/gcp-setup.md)**  
 Guía deploy completa: **[docs/demo-deploy.md](docs/demo-deploy.md)**
 
-### Capturas recomendadas para portfolio
-
-Añade en `docs/screenshots/` (o enlace en el README):
-
-1. Dashboard con mapa y filtros
-2. Ficha de propiedad con badge de última evaluación IA
-3. Panel de análisis tras subir un PDF
+Regenerar capturas: `pnpm screenshots` (requiere `DEMO_USER_PASSWORD` en `.env`).
 
 ## Docker Compose
 
@@ -127,9 +128,12 @@ Levanta server (`:3001`), mcp-ai (`:3002`) y web (`:3000`). Requiere `.env` conf
 
 ```bash
 pnpm --filter @proptech/server test
+pnpm test:e2e
 ```
 
-Incluye aislamiento RLS entre `demo-a` y `demo-b` y validación de PDF/cuotas.
+Incluye aislamiento RLS entre `demo-a` y `demo-b`, validación de PDF/cuotas y E2E Playwright (login → subir PDF → ver resultado).
+
+Variables E2E: `DEMO_USER_PASSWORD` (obligatoria), `E2E_BASE_URL` (opcional, default `http://localhost:3000`).
 
 ## CI
 
@@ -149,9 +153,12 @@ Script usuarios demo: `node scripts/setup-demo-users.mjs`
 
 - Auth Supabase + multi-tenancy (RLS)
 - Dashboard con filtros y **mapa Leaflet** (filtro por zona visible)
+- Fichas con fotos (carrusel), descripción y evaluación IA
 - Detalle de propiedad + upload PDF
 - Análisis IA async (Gemini) con polling
-- Historial de análisis
+- Historial de análisis + enlace desde listado global
+- Panel **platform admin** cross-org
+- Modo oscuro según preferencia del sistema
 - Modo demo con rate limits y cuotas
 
 ## Documentación

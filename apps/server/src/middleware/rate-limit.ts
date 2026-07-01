@@ -33,6 +33,7 @@ export const uploadRateLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   keyGenerator: clientKey,
+  skip: (req) => (req as AuthenticatedRequest).isPlatformAdmin === true,
   message: {
     error: {
       code: "UPLOAD_RATE_LIMITED",

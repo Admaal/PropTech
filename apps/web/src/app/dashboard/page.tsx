@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { fetchProperties } from "@/lib/api";
+import { isPlatformAdmin } from "@/lib/platform-admin";
 import { DashboardView } from "@/components/dashboard-view";
 import { AppShell } from "@/components/app-shell";
 
@@ -16,6 +17,7 @@ export default async function DashboardPage() {
   let properties: Awaited<ReturnType<typeof fetchProperties>>["data"] = [];
   let total = 0;
   let error: string | null = null;
+  const admin = await isPlatformAdmin(supabase);
 
   try {
     const result = await fetchProperties(session.access_token, { limit: "100" });
@@ -29,6 +31,7 @@ export default async function DashboardPage() {
     <AppShell
       title="Mis propiedades"
       subtitle="Explora el mapa y filtra por precio, superficie y riesgo"
+      showAdminLink={admin}
     >
       {error ? (
         <div className="rounded-lg border border-red-300 bg-red-50 p-6 text-sm text-red-800">

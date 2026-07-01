@@ -23,11 +23,22 @@ const riskBadgeColors = riskBadgeClasses;
 
 interface AnalysisPanelProps {
   analysisId: string;
+  seed?: DocumentAnalysis | null;
+  onUpdate?: (analysis: DocumentAnalysis) => void;
 }
 
-export function AnalysisPanel({ analysisId }: AnalysisPanelProps) {
-  const [analysis, setAnalysis] = useState<DocumentAnalysis | null>(null);
+export function AnalysisPanel({
+  analysisId,
+  seed = null,
+  onUpdate,
+}: AnalysisPanelProps) {
+  const [analysis, setAnalysis] = useState<DocumentAnalysis | null>(seed);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setAnalysis(seed);
+    setError(null);
+  }, [analysisId, seed]);
 
   const poll = useCallback(async () => {
     try {
@@ -40,6 +51,7 @@ export function AnalysisPanel({ analysisId }: AnalysisPanelProps) {
       const data = await fetchAnalysis(session.access_token, analysisId);
       setAnalysis(data);
       setError(null);
+      onUpdate?.(data);
       return data.status;
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Error al cargar análisis";
@@ -49,9 +61,13 @@ export function AnalysisPanel({ analysisId }: AnalysisPanelProps) {
       }
       return "failed" as const;
     }
-  }, [analysisId]);
+  }, [analysisId, onUpdate]);
 
   useEffect(() => {
+    const terminal =
+      analysis?.status === "completed" || analysis?.status === "failed";
+    if (terminal) return;
+
     let active = true;
     let timer: ReturnType<typeof setTimeout>;
     let intervalMs = 2000;
@@ -72,7 +88,7 @@ export function AnalysisPanel({ analysisId }: AnalysisPanelProps) {
       active = false;
       clearTimeout(timer);
     };
-  }, [poll]);
+  }, [poll, analysis?.status]);
 
   if (error) {
     return (

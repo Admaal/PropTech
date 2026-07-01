@@ -34,6 +34,7 @@ export class DocumentService {
   async uploadForProperty(input: {
     propertyId: string;
     file: Express.Multer.File;
+    skipQuota?: boolean;
   }): Promise<UploadDocumentResponse> {
     if (input.file.mimetype !== "application/pdf") {
       throw new DocumentUploadError(
@@ -68,6 +69,7 @@ export class DocumentService {
       property.organization_id,
     );
     if (
+      !input.skipQuota &&
       isAnalysisQuotaExceeded(analysesToday, serverConfig.dailyAnalysisQuota)
     ) {
       throw new DocumentUploadError(

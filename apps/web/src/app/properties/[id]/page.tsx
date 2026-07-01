@@ -4,6 +4,7 @@ import { fetchProperty, fetchAnalyses } from "@/lib/api";
 import { AppShell } from "@/components/app-shell";
 import { PropertyDocumentsSection } from "@/components/property-documents-section";
 import { PropertyLocationMap } from "@/components/property-location-map-loader";
+import { PropertyImageCarousel } from "@/components/property-image-carousel";
 import { LatestAnalysisBadge } from "@/components/latest-analysis-badge";
 
 interface PropertyPageProps {
@@ -52,6 +53,19 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
               </span>
             )}
           </div>
+          {property.image_urls.length > 0 && (
+            <div className="mb-6">
+              <PropertyImageCarousel
+                images={property.image_urls}
+                alt={property.title}
+              />
+            </div>
+          )}
+          {property.description && (
+            <p className="mb-6 text-sm leading-relaxed text-muted-foreground">
+              {property.description}
+            </p>
+          )}
           {property.latitude != null && property.longitude != null && (
             <div className="mb-6 overflow-hidden rounded-lg border border-border">
               <PropertyLocationMap
@@ -85,7 +99,10 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
           </dl>
         </section>
 
-        <section className="rounded-lg border border-border bg-card p-6">
+        <section
+          id="documentacion"
+          className="scroll-mt-6 rounded-lg border border-border bg-card p-6"
+        >
           <h2 className="mb-2 text-xl font-medium">
             Documentación del inquilino
           </h2>

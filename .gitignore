@@ -45,6 +45,8 @@ supabase/scripts/link-demo-users.sql
 
 # Tests
 coverage/
+test-results/
+playwright-report/
 
 # Terraform (estado local; no subir secretos)
 .terraform/
@@ -65,3 +67,12 @@ override.tf.json
 # Supabase CLI local
 supabase/.temp/
 supabase/.branches/
+
+# Scripts: ignorar por defecto, excepto los del repo
+scripts/*
+!scripts/gcp-bootstrap.ps1
+!scripts/list-gemini-models.mjs
+!scripts/push-gcp-secrets.ps1
+!scripts/setup-demo-users.mjs
+!scripts/capture-screenshots.mjs
+!scripts/setup-platform-admin.mjs

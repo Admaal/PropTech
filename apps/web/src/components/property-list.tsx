@@ -19,7 +19,7 @@ export function PropertyList({
   }
 
   return (
-    <div className="grid gap-6 md:grid-cols-2">
+    <div className="grid gap-6 md:grid-cols-2 md:items-stretch">
       {properties.map((property) => (
         <PropertyCard key={property.id} property={property} />
       ))}

@@ -122,9 +122,22 @@ export function PropertyMap({
               icon={priceIcon(property.price_monthly)}
             >
               <Popup>
-                <div className="min-w-[180px] text-sm text-[#202020]">
+                <div className="min-w-[220px] max-w-[260px] text-sm text-[#202020]">
+                  {property.image_urls[0] && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={property.image_urls[0]}
+                      alt={property.title}
+                      className="mb-2 h-28 w-full rounded-md object-cover"
+                    />
+                  )}
                   <p className="font-medium">{property.title}</p>
-                  <p className="text-[#333]">
+                  {property.description && (
+                    <p className="mt-1 line-clamp-3 text-xs text-[#555]">
+                      {property.description}
+                    </p>
+                  )}
+                  <p className="mt-2 font-medium">
                     {property.price_monthly.toLocaleString("es-ES")} €/mes
                   </p>
                   <Link

@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import type { DocumentAnalysisWithFilename, RiskLevel } from "@proptech/shared";
+import { useCallback, useEffect, useRef, useState } from "react";
+import type { DocumentAnalysis, DocumentAnalysisWithFilename, RiskLevel } from "@proptech/shared";
 import { fetchAnalyses } from "@/lib/api";
 import { createClient } from "@/lib/supabase/client";
 import { AnalysisPanel } from "@/components/analysis-panel";
@@ -34,17 +34,32 @@ interface PropertyAnalysesHistoryProps {
   propertyId: string;
   initialAnalyses?: DocumentAnalysisWithFilename[];
   refreshKey?: number;
+  activeAnalysisId?: string | null;
+  onActiveAnalysisComplete?: () => void;
+  onActiveAnalysisFailed?: () => void;
 }
 
 export function PropertyAnalysesHistory({
   propertyId,
   initialAnalyses = [],
   refreshKey = 0,
+  activeAnalysisId = null,
+  onActiveAnalysisComplete,
+  onActiveAnalysisFailed,
 }: PropertyAnalysesHistoryProps) {
   const [analyses, setAnalyses] =
     useState<DocumentAnalysisWithFilename[]>(initialAnalyses);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const notifiedRef = useRef<string | null>(null);
+
+  const syncAnalysis = useCallback((updated: DocumentAnalysis) => {
+    setAnalyses((prev) =>
+      prev.map((item) =>
+        item.id === updated.id ? { ...item, ...updated } : item,
+      ),
+    );
+  }, []);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -66,6 +81,33 @@ export function PropertyAnalysesHistory({
     void load();
   }, [propertyId, refreshKey, load, initialAnalyses.length]);
 
+  useEffect(() => {
+    if (activeAnalysisId) {
+      setExpandedId(activeAnalysisId);
+      notifiedRef.current = null;
+    }
+  }, [activeAnalysisId]);
+
+  useEffect(() => {
+    if (!activeAnalysisId) return;
+    const active = analyses.find((a) => a.id === activeAnalysisId);
+    if (!active) return;
+
+    if (active.status === "completed") {
+      const key = `${activeAnalysisId}:completed`;
+      if (notifiedRef.current === key) return;
+      notifiedRef.current = key;
+      onActiveAnalysisComplete?.();
+    }
+
+    if (active.status === "failed") {
+      const key = `${activeAnalysisId}:failed`;
+      if (notifiedRef.current === key) return;
+      notifiedRef.current = key;
+      onActiveAnalysisFailed?.();
+    }
+  }, [analyses, activeAnalysisId, onActiveAnalysisComplete, onActiveAnalysisFailed]);
+
   return (
     <section className="mt-8 border-t border-border pt-8">
       <div className="mb-4 flex items-center justify-between">
@@ -75,13 +117,27 @@ export function PropertyAnalysesHistory({
         )}
       </div>
 
-      {analyses.length === 0 ? (
+      {analyses.length === 0 && !activeAnalysisId ? (
         <p className="rounded-lg border border-border bg-muted/30 px-4 py-6 text-center text-sm text-muted-foreground">
           Aún no hay análisis para este inmueble. Sube un PDF arriba para
           empezar.
         </p>
       ) : (
         <ul className="space-y-3">
+          {activeAnalysisId &&
+            !analyses.some((a) => a.id === activeAnalysisId) && (
+              <li className="overflow-hidden rounded-lg border border-border bg-card">
+                <div className="border-b border-border px-4 py-3 text-sm font-medium">
+                  Análisis en curso…
+                </div>
+                <div className="p-4">
+                  <AnalysisPanel
+                    analysisId={activeAnalysisId}
+                    onUpdate={syncAnalysis}
+                  />
+                </div>
+              </li>
+            )}
           {analyses.map((a) => {
             const expanded = expandedId === a.id;
             return (
@@ -122,7 +178,11 @@ export function PropertyAnalysesHistory({
                 </button>
                 {expanded && (
                   <div className="border-t border-border p-4">
-                    <AnalysisPanel analysisId={a.id} />
+                    <AnalysisPanel
+                      analysisId={a.id}
+                      seed={a}
+                      onUpdate={syncAnalysis}
+                    />
                   </div>
                 )}
               </li>

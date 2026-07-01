@@ -1,13 +1,18 @@
 # Capturas para portfolio
 
-Añade aquí 2–3 capturas de pantalla tras el deploy:
+Generadas con `node scripts/capture-screenshots.mjs` (Playwright + cuenta demo A).
 
-1. `dashboard-mapa.png` — vista del dashboard con mapa Leaflet y filtros
-2. `propiedad-analisis.png` — ficha de propiedad con badge de evaluación IA
-3. `upload-pdf.png` — dropzone y panel de análisis en curso
+| Archivo | Contenido |
+|---------|-----------|
+| `dashboard-mapa.png` | Dashboard con mapa Leaflet y listado de propiedades |
+| `propiedad-analisis.png` | Ficha con carrusel de fotos y badge de evaluación IA |
+| `upload-pdf.png` | Upload PDF y resultado del análisis en el historial |
 
-Puedes enlazarlas en el README principal con rutas relativas, por ejemplo:
+Para regenerar:
 
-```markdown
-![Dashboard](docs/screenshots/dashboard-mapa.png)
+```bash
+pnpm exec playwright install chromium
+node scripts/capture-screenshots.mjs
 ```
+
+Variables: `DEMO_USER_PASSWORD` en `.env`; opcional `E2E_BASE_URL` (default: demo en Vercel).

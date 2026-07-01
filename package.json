@@ -5,7 +5,9 @@
     "dev": "pnpm run --parallel --filter @proptech/server --filter @proptech/web --filter @proptech/mcp-ai dev",
     "build": "pnpm run -r build",
     "lint": "pnpm run -r lint",
-    "typecheck": "pnpm run -r typecheck"
+    "typecheck": "pnpm run -r typecheck",
+    "test:e2e": "playwright test",
+    "screenshots": "node scripts/capture-screenshots.mjs"
   },
   "engines": {
     "node": ">=20"
@@ -16,5 +18,8 @@
       "sharp",
       "unrs-resolver"
     ]
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.61.1"
   }
 }

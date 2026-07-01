@@ -23,6 +23,13 @@ interface AnalysisRow {
   documents?: { filename: string; property_id: string | null } | null;
 }
 
+function docFromRow(
+  documents: AnalysisRow["documents"],
+): { filename: string; property_id: string | null } | null {
+  if (!documents) return null;
+  return Array.isArray(documents) ? (documents[0] ?? null) : documents;
+}
+
 function mapRow(row: AnalysisRow): DocumentAnalysis {
   return {
     id: row.id,
@@ -42,9 +49,11 @@ function mapRow(row: AnalysisRow): DocumentAnalysis {
 }
 
 function mapRowWithFilename(row: AnalysisRow): DocumentAnalysisWithFilename {
+  const doc = docFromRow(row.documents);
   return {
     ...mapRow(row),
-    filename: row.documents?.filename ?? null,
+    filename: doc?.filename ?? null,
+    property_id: doc?.property_id ?? null,
   };
 }
 
@@ -76,7 +85,7 @@ export class AnalysisRepository {
   async findRecent(limit = 20): Promise<DocumentAnalysisWithFilename[]> {
     const { data, error } = await this.supabase
       .from("document_analyses")
-      .select("*, documents(filename)")
+      .select("*, documents(filename, property_id)")
       .order("created_at", { ascending: false })
       .limit(limit);
 

@@ -46,6 +46,7 @@ documentsRouter.post(
       const result = await service.uploadForProperty({
         propertyId,
         file: req.file,
+        skipQuota: authReq.isPlatformAdmin,
       });
 
       res.status(202).json(result);

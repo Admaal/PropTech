@@ -13,6 +13,8 @@ interface PropertyRow {
   risk_level: "low" | "medium" | "high" | null;
   latitude: number | null;
   longitude: number | null;
+  description: string | null;
+  image_urls: string[];
   created_at: string;
 }
 
@@ -29,6 +31,8 @@ function mapRow(row: PropertyRow): Property {
     risk_level: row.risk_level,
     latitude: row.latitude,
     longitude: row.longitude,
+    description: row.description,
+    image_urls: row.image_urls ?? [],
     created_at: row.created_at,
   };
 }

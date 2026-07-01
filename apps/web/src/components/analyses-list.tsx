@@ -52,29 +52,50 @@ export function AnalysesList({ analyses }: AnalysesListProps) {
           </tr>
         </thead>
         <tbody>
-          {analyses.map((a) => (
-            <tr
-              key={a.id}
-              className="border-b border-border/50 last:border-0"
-            >
-              <td className="px-6 py-4">
-                {a.filename ?? a.document_id.slice(0, 8)}
-              </td>
-              <td className="px-6 py-4">{statusLabels[a.status]}</td>
-              <td className="px-6 py-4">
-                {a.risk_level ? riskLabels[a.risk_level] : "—"}
-              </td>
-              <td className="px-6 py-4">
-                {a.solvency_score != null ? `${a.solvency_score}/100` : "—"}
-              </td>
-              <td className="px-6 py-4">
-                {a.duration_ms != null
-                  ? `${(a.duration_ms / 1000).toFixed(1)}s`
-                  : "—"}
-              </td>
-              <td className="px-6 py-4">{a.tokens_used ?? "—"}</td>
-            </tr>
-          ))}
+          {analyses.map((a) => {
+            const label = a.filename ?? a.document_id.slice(0, 8);
+            return (
+              <tr
+                key={a.id}
+                className="border-b border-border/50 last:border-0"
+              >
+                <td className="px-6 py-4">
+                  {a.property_id ? (
+                    <Link
+                      href={`/properties/${a.property_id}#documentacion`}
+                      className="font-medium text-primary hover:underline"
+                      title="Ir al inmueble y su documentación"
+                    >
+                      {label}
+                    </Link>
+                  ) : (
+                    label
+                  )}
+                </td>
+                <td className="px-6 py-4">{statusLabels[a.status]}</td>
+                <td className="px-6 py-4">
+                  {a.risk_level ? (
+                    <span
+                      className={`rounded-full border px-2 py-0.5 text-xs ${riskBadgeClasses[a.risk_level]}`}
+                    >
+                      {riskLabels[a.risk_level]}
+                    </span>
+                  ) : (
+                    "—"
+                  )}
+                </td>
+                <td className="px-6 py-4">
+                  {a.solvency_score != null ? `${a.solvency_score}/100` : "—"}
+                </td>
+                <td className="px-6 py-4">
+                  {a.duration_ms != null
+                    ? `${(a.duration_ms / 1000).toFixed(1)}s`
+                    : "—"}
+                </td>
+                <td className="px-6 py-4">{a.tokens_used ?? "—"}</td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </div>
