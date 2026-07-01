@@ -157,7 +157,7 @@ Para tests RLS en CI, configura secrets `SUPABASE_URL` y `SUPABASE_ANON_KEY`.
 - **Backend:** Cloud Run — [infra/terraform/README.md](infra/terraform/README.md)
 - **Frontend:** Vercel — [docs/demo-deploy.md](docs/demo-deploy.md)
 
-Script usuarios demo: `node scripts/setup-demo-users.mjs`
+Script usuarios demo (local, carpeta `scripts/` no versionada): `node scripts/setup-demo-users.mjs`
 
 ## Funcionalidades MVP
 

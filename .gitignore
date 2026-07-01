@@ -68,11 +68,5 @@ override.tf.json
 supabase/.temp/
 supabase/.branches/
 
-# Scripts: ignorar por defecto, excepto los del repo
-scripts/*
-!scripts/gcp-bootstrap.ps1
-!scripts/list-gemini-models.mjs
-!scripts/push-gcp-secrets.ps1
-!scripts/setup-demo-users.mjs
-!scripts/capture-screenshots.mjs
-!scripts/setup-platform-admin.mjs
+# Scripts locales (no versionar; ya trackeados requieren git rm --cached)
+scripts/
