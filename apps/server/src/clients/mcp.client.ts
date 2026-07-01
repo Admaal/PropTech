@@ -1,4 +1,5 @@
 import type { AnalyzeJob } from "@proptech/shared";
+import { createServiceClient } from "../lib/supabase.js";
 
 async function getCloudRunIdToken(audience: string): Promise<string | undefined> {
   if (!audience.includes(".run.app")) {
@@ -19,6 +20,22 @@ async function getCloudRunIdToken(audience: string): Promise<string | undefined>
   }
 }
 
+async function markEnqueueFailed(analysisId: string, message: string): Promise<void> {
+  try {
+    const supabase = createServiceClient();
+    await supabase
+      .from("document_analyses")
+      .update({
+        status: "failed",
+        error_message: message,
+        completed_at: new Date().toISOString(),
+      })
+      .eq("id", analysisId);
+  } catch (err) {
+    console.error(`[mcp] No se pudo marcar failed ${analysisId}:`, err);
+  }
+}
+
 export function dispatchAnalysisJob(job: AnalyzeJob): void {
   void dispatchAnalysisJobAsync(job);
 }
@@ -28,7 +45,7 @@ async function dispatchAnalysisJobAsync(job: AnalyzeJob): Promise<void> {
     /\/$/,
     "",
   );
-  const internalKey = process.env.INTERNAL_SERVICE_KEY ?? "dev-internal-key";
+  const internalKey = (process.env.INTERNAL_SERVICE_KEY ?? "dev-internal-key").trim();
 
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
@@ -37,9 +54,9 @@ async function dispatchAnalysisJobAsync(job: AnalyzeJob): Promise<void> {
 
   const idToken = await getCloudRunIdToken(baseUrl);
   if (baseUrl.includes(".run.app") && !idToken) {
-    console.error(
-      `[mcp] Sin token de identidad para ${baseUrl} — análisis ${job.analysisId} no encolado`,
-    );
+    const msg = "No se pudo obtener token de identidad para mcp-ai";
+    console.error(`[mcp] ${msg} — análisis ${job.analysisId}`);
+    await markEnqueueFailed(job.analysisId, msg);
     return;
   }
   if (idToken) {
@@ -55,14 +72,13 @@ async function dispatchAnalysisJobAsync(job: AnalyzeJob): Promise<void> {
 
     if (!res.ok) {
       const body = await res.text().catch(() => "");
-      console.error(
-        `[mcp] Encolado falló ${job.analysisId}: HTTP ${res.status} ${body.slice(0, 200)}`,
-      );
+      const msg = `Encolado falló: HTTP ${res.status}${body ? ` — ${body.slice(0, 120)}` : ""}`;
+      console.error(`[mcp] ${msg} (${job.analysisId})`);
+      await markEnqueueFailed(job.analysisId, msg);
     }
   } catch (err: unknown) {
-    console.error(
-      `[mcp] Error al encolar análisis ${job.analysisId}:`,
-      err instanceof Error ? err.message : err,
-    );
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error(`[mcp] Error al encolar análisis ${job.analysisId}:`, msg);
+    await markEnqueueFailed(job.analysisId, `Error de red al encolar: ${msg}`);
   }
 }

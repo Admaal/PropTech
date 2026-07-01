@@ -32,7 +32,12 @@ foreach ($secret in $map.Keys) {
     throw "Falta $key en .env"
   }
   Write-Host "Subiendo $secret..."
-  $envVars[$key] | gcloud secrets versions add $secret --data-file=- --project=$ProjectId | Out-Null
+  $value = $envVars[$key]
+  $bytes = [System.Text.Encoding]::UTF8.GetBytes($value)
+  $tempFile = Join-Path $env:TEMP "proptech-secret-$secret.txt"
+  [System.IO.File]::WriteAllBytes($tempFile, $bytes)
+  gcloud secrets versions add $secret --data-file=$tempFile --project=$ProjectId | Out-Null
+  Remove-Item $tempFile -Force
 }
 
 $projectNumber = gcloud projects describe $ProjectId --format="value(projectNumber)"

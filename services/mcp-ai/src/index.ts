@@ -5,7 +5,6 @@ import { resolveGeminiModels, runAnalysis } from "./analyze.js";
 
 const app = express();
 const port = Number(process.env.MCP_PORT ?? 3002);
-const internalKey = process.env.INTERNAL_SERVICE_KEY ?? "dev-internal-key";
 
 app.use(express.json({ limit: "1mb" }));
 
@@ -14,7 +13,14 @@ app.get("/health", (_req, res) => {
 });
 
 function verifyInternal(req: express.Request, res: express.Response): boolean {
+  // ponytail: en Cloud Run, IAM run.invoker ya valida el Bearer token del caller.
+  // X-Internal-Key solo aplica en desarrollo local (docker compose).
+  if (process.env.K_SERVICE) {
+    return true;
+  }
+
   const key = req.headers["x-internal-key"];
+  const internalKey = (process.env.INTERNAL_SERVICE_KEY ?? "dev-internal-key").trim();
   if (key !== internalKey) {
     res.status(401).json({ error: "No autorizado" });
     return false;
