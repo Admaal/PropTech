@@ -1,8 +1,9 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import type { GenerateContentResult } from "@google/generative-ai";
-import { AnalysisResultSchema, type AnalyzeJob } from "@proptech/shared";
+import type { AnalyzeJob } from "@proptech/shared";
 import { ZodError } from "zod";
 import { createServiceClient } from "./lib/supabase.js";
+import { parseGeminiAnalysisJson } from "./parse-analysis-response.js";
 
 function buildSystemPrompt(): string {
   const now = new Date();
@@ -41,7 +42,6 @@ Criterios: low = ingresos estables y suficientes; medium = dudas o datos incompl
 Si el documento no es legible, risk_level "high" y explica en anomalies.`;
 }
 
-// ponytail: jun 2026 — gemini-1.5-* y gemini-2.0-* están retirados o sin cuota free.
 // Ver modelos vigentes: node scripts/list-gemini-models.mjs
 const DEFAULT_MODELS = [
   "gemini-3.1-flash-lite",
@@ -185,7 +185,7 @@ export async function runAnalysis(job: AnalyzeJob): Promise<void> {
     const result = await generateWithModels(apiKey, base64);
 
     const rawText = result.response.text();
-    const parsed = AnalysisResultSchema.parse(JSON.parse(rawText));
+    const parsed = parseGeminiAnalysisJson(rawText);
     const durationMs = Date.now() - startedAt;
     const tokensUsed =
       result.response.usageMetadata?.totalTokenCount ?? null;

@@ -14,7 +14,7 @@ Monorepo con frontend Next.js, API Express, Supabase (PostgreSQL + RLS + Auth) y
 
 | Capa | Tecnología |
 |------|------------|
-| Frontend | Next.js 15+, TypeScript, Tailwind, Leaflet |
+| Frontend | Next.js 16, TypeScript, Tailwind CSS, Leaflet |
 | API | Express + Zod + rate limiting |
 | Base de datos | Supabase PostgreSQL + RLS + PostGIS |
 | IA | MCP + Google Gemini (async) |
@@ -74,7 +74,8 @@ pnpm dev
 
 ### Variables obligatorias
 
-- `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`
+- `SUPABASE_URL`, `SUPABASE_ANON_KEY` (API server y web)
+- `SUPABASE_SERVICE_ROLE_KEY` (solo mcp-ai, nunca en el browser)
 - `GEMINI_API_KEY` — [Google AI Studio](https://aistudio.google.com/apikey)
 - `INTERNAL_SERVICE_KEY` — clave compartida server ↔ mcp-ai
 
@@ -127,33 +128,35 @@ Levanta server (`:3001`), mcp-ai (`:3002`) y web (`:3000`). Requiere `.env` conf
 ## Tests
 
 ```bash
-pnpm --filter @proptech/server test
-pnpm test:e2e          # smoke + upload mockeado (sin cuota ni IA)
-pnpm test:e2e:full     # admin + upload real + IA (manual o workflow semanal)
+pnpm --filter @proptech/shared test   # schemas Zod
+pnpm --filter @proptech/mcp-ai test   # validación respuesta Gemini
+pnpm --filter @proptech/server test   # PDF/cuotas + RLS cross-org
+pnpm test:e2e                         # smoke + upload mockeado (sin cuota ni IA)
+pnpm test:e2e:full                    # admin + upload real + IA (manual o workflow semanal)
 ```
 
-Incluye aislamiento RLS entre `demo-a` y `demo-b`, validación de PDF/cuotas y E2E Playwright en dos capas:
+Incluye aislamiento RLS entre `demo-a` y `demo-b`, validación de PDF/cuotas, schemas compartidos, parsing de salida Gemini y E2E Playwright en dos capas:
 
 | Comando | Qué valida | Cuándo |
 |---------|------------|--------|
-| `pnpm test:e2e` | Login, dashboard, ficha, flujo UI de upload **mockeado** | CI en cada push a `main` |
+| `pnpm test:e2e` | Login, dashboard, ficha, flujo UI de upload **mockeado** | CI en push a `main` y PRs del repo |
 | `pnpm test:e2e:full` | Upload real + análisis IA completo (cuenta admin) | Manual o workflow semanal |
 
 Variables E2E: `DEMO_USER_PASSWORD` (CI), `E2E_BASE_URL` (opcional), `PLATFORM_ADMIN_PASSWORD` (full-stack).
 
 ## CI
 
-GitHub Actions (`.github/workflows/ci.yml`): build, typecheck y tests en cada push/PR.
+GitHub Actions (`.github/workflows/ci.yml`): build, typecheck, lint, tests unitarios y RLS en cada push/PR.
 
-E2E en push a `main`: smoke + upload mockeado (sin consumir cuota demo ni Gemini).
+E2E smoke + upload mockeado en push a `main` y en **pull requests del mismo repositorio** (sin consumir cuota demo ni Gemini).
 
 Full-stack con IA real: workflow manual/semanal `.github/workflows/e2e-full-stack.yml` (requiere secret `PLATFORM_ADMIN_PASSWORD`).
+
+Para tests RLS en CI (push a `main`), configura secrets `SUPABASE_URL`, `SUPABASE_ANON_KEY` y `DEMO_USER_PASSWORD`.
 
 ## Seguridad
 
 Ver [SECURITY.md](SECURITY.md) para reportar vulnerabilidades y buenas prácticas antes de desplegar o hacer pública la repo.
-
-Para tests RLS en CI, configura secrets `SUPABASE_URL` y `SUPABASE_ANON_KEY`.
 
 ## Despliegue
 

@@ -15,12 +15,14 @@
     "build": "tsc",
     "dev": "tsc --watch",
     "typecheck": "tsc --noEmit",
+    "test": "vitest run",
     "lint": "echo \"no lint configured\""
   },
   "dependencies": {
     "zod": "^3.24.2"
   },
   "devDependencies": {
-    "typescript": "^5.8.2"
+    "typescript": "^5.8.2",
+    "vitest": "^3.0.9"
   }
 }

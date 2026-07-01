@@ -1,8 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useSyncExternalStore } from "react";
 
 type Theme = "light" | "dark";
+
+const themeListeners = new Set<() => void>();
 
 function resolveTheme(): Theme {
   const stored = localStorage.getItem("theme");
@@ -12,33 +14,49 @@ function resolveTheme(): Theme {
     : "light";
 }
 
-function applyTheme(theme: Theme, persist = false) {
+function applyTheme(theme: Theme) {
   document.documentElement.classList.toggle("dark", theme === "dark");
-  if (persist) {
-    localStorage.setItem("theme", theme);
-  }
+}
+
+function subscribeTheme(onStoreChange: () => void) {
+  themeListeners.add(onStoreChange);
+  const mq = window.matchMedia("(prefers-color-scheme: dark)");
+  const onSystemChange = () => {
+    if (localStorage.getItem("theme")) return;
+    onStoreChange();
+  };
+  mq.addEventListener("change", onSystemChange);
+  return () => {
+    themeListeners.delete(onStoreChange);
+    mq.removeEventListener("change", onSystemChange);
+  };
+}
+
+function getThemeSnapshot(): Theme {
+  return resolveTheme();
+}
+
+function setThemePreference(theme: Theme) {
+  localStorage.setItem("theme", theme);
+  applyTheme(theme);
+  themeListeners.forEach((listener) => listener());
 }
 
 export function ThemeToggle() {
-  const [theme, setTheme] = useState<Theme>("light");
-  const [mounted, setMounted] = useState(false);
+  const theme = useSyncExternalStore(
+    subscribeTheme,
+    getThemeSnapshot,
+    () => "light" as Theme,
+  );
+  const mounted = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
+  );
 
   useEffect(() => {
-    const initial = resolveTheme();
-    applyTheme(initial);
-    setTheme(initial);
-    setMounted(true);
-
-    const mq = window.matchMedia("(prefers-color-scheme: dark)");
-    const onSystemChange = () => {
-      if (localStorage.getItem("theme")) return;
-      const next = mq.matches ? "dark" : "light";
-      applyTheme(next);
-      setTheme(next);
-    };
-    mq.addEventListener("change", onSystemChange);
-    return () => mq.removeEventListener("change", onSystemChange);
-  }, []);
+    applyTheme(theme);
+  }, [theme]);
 
   if (!mounted) {
     return (
@@ -55,10 +73,7 @@ export function ThemeToggle() {
   return (
     <button
       type="button"
-      onClick={() => {
-        applyTheme(next, true);
-        setTheme(next);
-      }}
+      onClick={() => setThemePreference(next)}
       className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg border border-border bg-card text-sm transition-colors hover:bg-muted"
       aria-label={theme === "dark" ? "Modo claro" : "Modo oscuro"}
       title={theme === "dark" ? "Modo claro" : "Modo oscuro"}

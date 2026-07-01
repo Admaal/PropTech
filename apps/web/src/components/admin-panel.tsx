@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { alertErrorClasses } from "@/lib/ui-styles";
 
@@ -25,6 +25,32 @@ interface AnalysisRow {
   storage_path: string | null;
 }
 
+function mapAnalysisRows(
+  rows: {
+    id: string;
+    status: string;
+    created_at: string;
+    document_id: string;
+    documents:
+      | { filename: string; storage_path: string }
+      | { filename: string; storage_path: string }[]
+      | null;
+  }[],
+): AnalysisRow[] {
+  return rows.map((row) => {
+    const doc = row.documents;
+    const d = Array.isArray(doc) ? doc[0] : doc;
+    return {
+      id: row.id,
+      status: row.status,
+      created_at: row.created_at,
+      document_id: row.document_id,
+      filename: d?.filename ?? null,
+      storage_path: d?.storage_path ?? null,
+    };
+  });
+}
+
 export function AdminPanel() {
   const [orgs, setOrgs] = useState<Organization[]>([]);
   const [orgId, setOrgId] = useState("");
@@ -33,21 +59,7 @@ export function AdminPanel() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
 
-  const loadOrgs = useCallback(async () => {
-    const supabase = createClient();
-    const { data, error: err } = await supabase
-      .from("organizations")
-      .select("id, name")
-      .order("name");
-    if (err) {
-      setError(err.message);
-      return;
-    }
-    setOrgs(data ?? []);
-    if (data?.length && !orgId) setOrgId(data[0].id);
-  }, [orgId]);
-
-  const loadOrgData = useCallback(async (selectedOrgId: string) => {
+  async function loadOrgData(selectedOrgId: string) {
     if (!selectedOrgId) return;
     const supabase = createClient();
     setError(null);
@@ -77,32 +89,77 @@ export function AdminPanel() {
     }
 
     setProperties(propsRes.data ?? []);
-    setAnalyses(
-      (analysesRes.data ?? []).map((row) => {
-        const doc = row.documents as
-          | { filename: string; storage_path: string }
-          | { filename: string; storage_path: string }[]
-          | null;
-        const d = Array.isArray(doc) ? doc[0] : doc;
-        return {
-          id: row.id,
-          status: row.status,
-          created_at: row.created_at,
-          document_id: row.document_id,
-          filename: d?.filename ?? null,
-          storage_path: d?.storage_path ?? null,
-        };
-      }),
-    );
+    setAnalyses(mapAnalysisRows(analysesRes.data ?? []));
+  }
+
+  useEffect(() => {
+    let cancelled = false;
+
+    void (async () => {
+      const supabase = createClient();
+      const { data, error: err } = await supabase
+        .from("organizations")
+        .select("id, name")
+        .order("name");
+
+      if (cancelled) return;
+      if (err) {
+        setError(err.message);
+        return;
+      }
+
+      setOrgs(data ?? []);
+      if (data?.length) {
+        setOrgId((prev) => prev || data[0]!.id);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {
-    void loadOrgs();
-  }, [loadOrgs]);
+    if (!orgId) return;
+    let cancelled = false;
 
-  useEffect(() => {
-    if (orgId) void loadOrgData(orgId);
-  }, [orgId, loadOrgData]);
+    void (async () => {
+      const supabase = createClient();
+      setError(null);
+
+      const [propsRes, analysesRes] = await Promise.all([
+        supabase
+          .from("properties")
+          .select("id, title, address, city")
+          .eq("organization_id", orgId)
+          .order("title"),
+        supabase
+          .from("document_analyses")
+          .select(
+            "id, status, created_at, document_id, documents(filename, storage_path)",
+          )
+          .eq("organization_id", orgId)
+          .order("created_at", { ascending: false }),
+      ]);
+
+      if (cancelled) return;
+      if (propsRes.error) {
+        setError(propsRes.error.message);
+        return;
+      }
+      if (analysesRes.error) {
+        setError(analysesRes.error.message);
+        return;
+      }
+
+      setProperties(propsRes.data ?? []);
+      setAnalyses(mapAnalysisRows(analysesRes.data ?? []));
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [orgId]);
 
   async function deleteProperty(propertyId: string) {
     if (!confirm("¿Eliminar este inmueble y sus documentos asociados?")) return;

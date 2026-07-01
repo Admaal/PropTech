@@ -10,7 +10,7 @@ The goal is to build a system that is simple, maintainable, secure, and scalable
 
 System components:
 
-- Frontend: Next.js 15 (App Router, TypeScript, Tailwind, shadcn/ui)
+- Frontend: Next.js 16 (App Router, TypeScript, Tailwind CSS, componentes propios)
 - Backend: Node.js (`apps/server`, Express + TypeScript + Zod)
 - Database: Supabase PostgreSQL with Row Level Security (RLS)
 - AI Layer: MCP server (Model Context Protocol) using Google Gemini
@@ -94,8 +94,8 @@ Before writing code, evaluate in order:
 
 - Follow DESIGN.md for all UI: colors, typography, spacing, components, and layout.
 - Maintain a professional SaaS UI (light mode per DESIGN.md, clean layout).
-- Use Tailwind CSS and shadcn/ui components mapped to DESIGN.md tokens.
-- Use semantic tokens (e.g. `bg-background`, `text-primary`) — never raw hex in components.
+- Use Tailwind CSS and semantic design tokens from DESIGN.md (e.g. `bg-background`, `text-primary`) — never raw hex in components.
+- UI built with custom components (no shadcn/ui dependency).
 - Keep components reusable but not over-abstracted.
 - Use skeleton loaders for async states.
 - Ensure responsive design by default.
@@ -120,9 +120,11 @@ Before writing code, evaluate in order:
   - critical business rules
   - regressions
   - complex logic
+  - Zod schemas in `packages/shared`
+  - Gemini response validation in `services/mcp-ai`
 - Do NOT test trivial functions or getters.
 - Avoid excessive mocking.
-- Prefer real dependencies when feasible (e.g., test DB via Docker).
+- Prefer real dependencies when feasible (e.g., RLS tests against Supabase in CI).
 
 ---
 

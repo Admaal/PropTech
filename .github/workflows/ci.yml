@@ -35,7 +35,12 @@ jobs:
 
       - name: Lint web
         run: pnpm --filter @proptech/web lint
-        continue-on-error: true
+
+      - name: Shared tests (Zod schemas)
+        run: pnpm --filter @proptech/shared test
+
+      - name: MCP-AI tests (Gemini validation)
+        run: pnpm --filter @proptech/mcp-ai test
 
       - name: Server tests (RLS)
         run: pnpm --filter @proptech/server test

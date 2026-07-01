@@ -35,11 +35,6 @@ export function AnalysisPanel({
   const [analysis, setAnalysis] = useState<DocumentAnalysis | null>(seed);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    setAnalysis(seed);
-    setError(null);
-  }, [analysisId, seed]);
-
   const poll = useCallback(async () => {
     try {
       const supabase = createClient();

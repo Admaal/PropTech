@@ -49,9 +49,15 @@ export function PropertyAnalysesHistory({
 }: PropertyAnalysesHistoryProps) {
   const [analyses, setAnalyses] =
     useState<DocumentAnalysisWithFilename[]>(initialAnalyses);
-  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [manualExpandedId, setManualExpandedId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const notifiedRef = useRef<string | null>(null);
+
+  const expandedId = activeAnalysisId ?? manualExpandedId;
+
+  useEffect(() => {
+    notifiedRef.current = null;
+  }, [activeAnalysisId]);
 
   const syncAnalysis = useCallback((updated: DocumentAnalysis) => {
     setAnalyses((prev) =>
@@ -61,32 +67,30 @@ export function PropertyAnalysesHistory({
     );
   }, []);
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    try {
-      const supabase = createClient();
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      if (!session) return;
-      const data = await fetchAnalyses(session.access_token, propertyId);
-      setAnalyses(data);
-    } finally {
-      setLoading(false);
-    }
-  }, [propertyId]);
-
   useEffect(() => {
     if (refreshKey === 0 && initialAnalyses.length > 0) return;
-    void load();
-  }, [propertyId, refreshKey, load, initialAnalyses.length]);
 
-  useEffect(() => {
-    if (activeAnalysisId) {
-      setExpandedId(activeAnalysisId);
-      notifiedRef.current = null;
-    }
-  }, [activeAnalysisId]);
+    let cancelled = false;
+
+    void (async () => {
+      setLoading(true);
+      try {
+        const supabase = createClient();
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+        if (!session || cancelled) return;
+        const data = await fetchAnalyses(session.access_token, propertyId);
+        if (!cancelled) setAnalyses(data);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [propertyId, refreshKey, initialAnalyses.length]);
 
   useEffect(() => {
     if (!activeAnalysisId) return;
@@ -132,6 +136,7 @@ export function PropertyAnalysesHistory({
                 </div>
                 <div className="p-4">
                   <AnalysisPanel
+                    key={activeAnalysisId}
                     analysisId={activeAnalysisId}
                     onUpdate={syncAnalysis}
                   />
@@ -147,7 +152,9 @@ export function PropertyAnalysesHistory({
               >
                 <button
                   type="button"
-                  onClick={() => setExpandedId(expanded ? null : a.id)}
+                  onClick={() =>
+                    setManualExpandedId(expanded ? null : a.id)
+                  }
                   className="flex w-full items-center justify-between gap-4 px-4 py-3 text-left text-sm hover:bg-muted/30"
                 >
                   <div className="min-w-0">
@@ -179,6 +186,7 @@ export function PropertyAnalysesHistory({
                 {expanded && (
                   <div className="border-t border-border p-4">
                     <AnalysisPanel
+                      key={a.id}
                       analysisId={a.id}
                       seed={a}
                       onUpdate={syncAnalysis}

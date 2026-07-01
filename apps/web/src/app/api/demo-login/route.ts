@@ -3,6 +3,10 @@ import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { z } from "zod";
 import { DEMO_ACCOUNTS } from "@/lib/demo-mode";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
+
+const DEMO_LOGIN_MAX_ATTEMPTS = 10;
+const DEMO_LOGIN_WINDOW_MS = 15 * 60 * 1000;
 
 const demoEmails = DEMO_ACCOUNTS.map((a) => a.email);
 
@@ -22,6 +26,22 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const ip = getClientIp(request);
+  const limited = checkRateLimit(
+    `demo-login:${ip}`,
+    DEMO_LOGIN_MAX_ATTEMPTS,
+    DEMO_LOGIN_WINDOW_MS,
+  );
+  if (!limited.ok) {
+    return NextResponse.json(
+      { error: "Demasiados intentos. Inténtalo más tarde." },
+      {
+        status: 429,
+        headers: { "Retry-After": String(limited.retryAfterSec) },
+      },
+    );
+  }
+
   const demoPassword = process.env.DEMO_USER_PASSWORD;
   if (!demoPassword) {
     return NextResponse.json(
