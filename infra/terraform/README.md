@@ -74,3 +74,33 @@ upload_rate_limit_max = 5
 
 - mcp-ai usa `INGRESS_TRAFFIC_ALL` con **IAM `run.invoker`** restringido a la service account de Compute (solo el server puede invocarlo). El server envía además `X-Internal-Key` e ID token de Cloud Run.
 - Para demo local usa `docker compose up --build` (ver README raíz). En local el puerto 3002 está expuesto: usa `INTERNAL_SERVICE_KEY` fuerte.
+- **`cpu_idle = true`** en Terraform (request-based billing): Cloud Run solo factura CPU durante peticiones. Sin esto, el coste puede multiplicarse.
+- **Scale-to-zero** (`min_instance_count = 0`): la demo se despierta sola; la primera visita puede tardar ~15 s (UX en `/login`).
+
+## Modo A — Portfolio activo (recomendado)
+
+Demo online para reclutadores con coste bajo:
+
+| Concepto | Coste/mes aprox. |
+|----------|------------------|
+| Secret Manager (6 secretos) | ~0,35 € |
+| Artifact Registry | ~0,05 € |
+| Cloud Run (poco tráfico) | ~0–0,50 € |
+| **Total GCP** | **~0,40–1 €** |
+
+Mantén los servicios desplegados (`terraform apply`). No hace falta `destroy` rutinario.
+
+**Presupuesto GCP (manual):** Billing → Budgets → **1 €/mes**, alertas al 50 % y 100 %.
+
+## Modo B — Pausa larga (~0 €/mes)
+
+Solo si no necesitas la demo durante semanas:
+
+```powershell
+cd infra/terraform
+terraform destroy
+```
+
+Para reactivar: `terraform apply` y repoblar secretos (ver sección 2).
+
+Con Modo B la demo no se auto-despierta; un visitante verá "demo no disponible" hasta que vuelvas a aplicar Terraform.

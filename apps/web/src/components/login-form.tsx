@@ -7,9 +7,10 @@ import { DEMO_ACCOUNTS, DEMO_DAILY_ANALYSIS_LIMIT } from "@/lib/demo-mode";
 
 interface LoginFormProps {
   demoEnabled: boolean;
+  apiReady?: boolean;
 }
 
-export function LoginForm({ demoEnabled }: LoginFormProps) {
+export function LoginForm({ demoEnabled, apiReady = true }: LoginFormProps) {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -90,7 +91,7 @@ export function LoginForm({ demoEnabled }: LoginFormProps) {
             <button
               key={account.id}
               type="button"
-              disabled={loading || !demoEnabled}
+              disabled={loading || !demoEnabled || !apiReady}
               onClick={() => void handleDemoLogin(account.email)}
               className="rounded-lg border border-border bg-background px-4 py-3 text-left text-sm font-medium transition-colors hover:bg-muted disabled:opacity-60"
             >

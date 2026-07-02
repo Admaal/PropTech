@@ -88,12 +88,13 @@ resource "google_cloud_run_v2_service" "server" {
           cpu    = "1"
           memory = "512Mi"
         }
+        cpu_idle = true
       }
     }
 
     scaling {
       min_instance_count = 0
-      max_instance_count = 3
+      max_instance_count = 1
     }
   }
 }
@@ -157,12 +158,13 @@ resource "google_cloud_run_v2_service" "mcp_ai" {
           cpu    = "1"
           memory = "512Mi"
         }
+        cpu_idle = true
       }
     }
 
     scaling {
       min_instance_count = 0
-      max_instance_count = 2
+      max_instance_count = 1
     }
   }
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { DocumentAnalysis, RiskLevel } from "@proptech/shared";
 import { fetchAnalysis } from "@/lib/api";
 import { createClient } from "@/lib/supabase/client";
@@ -34,6 +34,8 @@ export function AnalysisPanel({
 }: AnalysisPanelProps) {
   const [analysis, setAnalysis] = useState<DocumentAnalysis | null>(seed);
   const [error, setError] = useState<string | null>(null);
+  const [showEngineWarmup, setShowEngineWarmup] = useState(false);
+  const pendingSinceRef = useRef<number | null>(null);
 
   const poll = useCallback(async () => {
     try {
@@ -85,6 +87,28 @@ export function AnalysisPanel({
     };
   }, [poll, analysis?.status]);
 
+  const isPending =
+    !analysis ||
+    analysis.status === "pending" ||
+    analysis.status === "processing";
+
+  useEffect(() => {
+    if (!isPending) {
+      pendingSinceRef.current = null;
+      const timer = setTimeout(() => setShowEngineWarmup(false), 0);
+      return () => clearTimeout(timer);
+    }
+
+    if (pendingSinceRef.current == null) {
+      pendingSinceRef.current = Date.now();
+    }
+
+    const elapsed = Date.now() - pendingSinceRef.current;
+    const delay = Math.max(0, 3_000 - elapsed);
+    const timer = setTimeout(() => setShowEngineWarmup(true), delay);
+    return () => clearTimeout(timer);
+  }, [isPending, analysis?.status]);
+
   if (error) {
     return (
       <div className={`p-4 text-sm ${alertErrorClasses}`}>
@@ -107,6 +131,12 @@ export function AnalysisPanel({
         <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
           <div className="h-full w-1/3 animate-pulse rounded-full bg-primary" />
         </div>
+        {showEngineWarmup && (
+          <p className="mt-3 text-xs text-muted-foreground">
+            Preparando el motor de análisis… La primera vez puede tardar un
+            poco más.
+          </p>
+        )}
       </div>
     );
   }

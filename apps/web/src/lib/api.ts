@@ -4,6 +4,7 @@ import type {
   PropertyListItem,
   UploadDocumentResponse,
 } from "@proptech/shared";
+import { fetchWithRetry } from "@/lib/fetch-with-retry";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
 
@@ -38,7 +39,7 @@ export async function fetchProperties(
   limit: number;
 }> {
   const search = new URLSearchParams(params);
-  const res = await fetch(`${API_URL}/api/v1/properties?${search}`, {
+  const res = await fetchWithRetry(`${API_URL}/api/v1/properties?${search}`, {
     headers: { Authorization: `Bearer ${accessToken}` },
     cache: "no-store",
   });
@@ -54,7 +55,7 @@ export async function fetchProperty(
   accessToken: string,
   id: string,
 ): Promise<PropertyListItem> {
-  const res = await fetch(`${API_URL}/api/v1/properties/${id}`, {
+  const res = await fetchWithRetry(`${API_URL}/api/v1/properties/${id}`, {
     headers: { Authorization: `Bearer ${accessToken}` },
     cache: "no-store",
   });
@@ -75,7 +76,7 @@ export async function uploadDocument(
   form.append("propertyId", propertyId);
   form.append("file", file);
 
-  const res = await fetch(`${API_URL}/api/v1/documents`, {
+  const res = await fetchWithRetry(`${API_URL}/api/v1/documents`, {
     method: "POST",
     headers: { Authorization: `Bearer ${accessToken}` },
     body: form,
@@ -92,7 +93,7 @@ export async function fetchAnalysis(
   accessToken: string,
   id: string,
 ): Promise<DocumentAnalysis> {
-  const res = await fetch(`${API_URL}/api/v1/analyses/${id}`, {
+  const res = await fetchWithRetry(`${API_URL}/api/v1/analyses/${id}`, {
     headers: { Authorization: `Bearer ${accessToken}` },
     cache: "no-store",
   });
@@ -111,7 +112,7 @@ export async function fetchAnalyses(
   const search = propertyId
     ? `?propertyId=${encodeURIComponent(propertyId)}`
     : "";
-  const res = await fetch(`${API_URL}/api/v1/analyses${search}`, {
+  const res = await fetchWithRetry(`${API_URL}/api/v1/analyses${search}`, {
     headers: { Authorization: `Bearer ${accessToken}` },
     cache: "no-store",
   });

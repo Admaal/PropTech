@@ -1,6 +1,7 @@
 import { fetchProperties } from "@/lib/api";
 import { requireAuth } from "@/lib/auth-server";
 import { isPlatformAdmin } from "@/lib/platform-admin";
+import { ApiRetryPanel } from "@/components/api-retry-panel";
 import { DashboardView } from "@/components/dashboard-view";
 import { AppShell } from "@/components/app-shell";
 
@@ -27,13 +28,7 @@ export default async function DashboardPage() {
       showAdminLink={admin}
     >
       {error ? (
-        <div className="rounded-lg border border-red-300 bg-red-50 p-6 text-sm text-red-800">
-          {error}
-          <p className="mt-2 text-muted-foreground">
-            Verifica que el servidor esté en marcha y las variables de entorno
-            configuradas.
-          </p>
-        </div>
+        <ApiRetryPanel />
       ) : (
         <DashboardView
           accessToken={accessToken}
