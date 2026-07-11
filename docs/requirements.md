@@ -1,4 +1,4 @@
-# Requisitos — PropTech
+# Requisitos — PropTech MVP
 
 ## Requisitos funcionales
 
