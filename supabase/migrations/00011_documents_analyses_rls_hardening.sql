@@ -8,11 +8,11 @@ DROP POLICY IF EXISTS analyses_all ON document_analyses;
 -- ── documents ───────────────────────────────────────────────────────────────
 
 CREATE POLICY documents_select ON documents
-  FOR SELECT USING (organization_id IN (SELECT user_organization_ids()));
+  FOR SELECT USING (organization_id IN (SELECT private.user_organization_ids()));
 
 CREATE POLICY documents_insert ON documents
   FOR INSERT WITH CHECK (
-    organization_id IN (SELECT user_organization_ids())
+    organization_id IN (SELECT private.user_organization_ids())
     AND property_id IS NOT NULL
     AND EXISTS (
       SELECT 1
@@ -23,16 +23,16 @@ CREATE POLICY documents_insert ON documents
   );
 
 CREATE POLICY documents_delete ON documents
-  FOR DELETE USING (organization_id IN (SELECT user_organization_ids()));
+  FOR DELETE USING (organization_id IN (SELECT private.user_organization_ids()));
 
 -- ── document_analyses ───────────────────────────────────────────────────────
 
 CREATE POLICY analyses_select ON document_analyses
-  FOR SELECT USING (organization_id IN (SELECT user_organization_ids()));
+  FOR SELECT USING (organization_id IN (SELECT private.user_organization_ids()));
 
 CREATE POLICY analyses_insert ON document_analyses
   FOR INSERT WITH CHECK (
-    organization_id IN (SELECT user_organization_ids())
+    organization_id IN (SELECT private.user_organization_ids())
     AND status = 'pending'
     AND risk_level IS NULL
     AND solvency_score IS NULL
@@ -54,11 +54,11 @@ CREATE POLICY analyses_insert ON document_analyses
 CREATE POLICY analyses_update_enqueue_fail ON document_analyses
   FOR UPDATE
   USING (
-    organization_id IN (SELECT user_organization_ids())
+    organization_id IN (SELECT private.user_organization_ids())
     AND status IN ('pending', 'processing')
   )
   WITH CHECK (
-    organization_id IN (SELECT user_organization_ids())
+    organization_id IN (SELECT private.user_organization_ids())
     AND status = 'failed'
     AND risk_level IS NULL
     AND solvency_score IS NULL
@@ -69,4 +69,4 @@ CREATE POLICY analyses_update_enqueue_fail ON document_analyses
   );
 
 CREATE POLICY analyses_delete ON document_analyses
-  FOR DELETE USING (organization_id IN (SELECT user_organization_ids()));
+  FOR DELETE USING (organization_id IN (SELECT private.user_organization_ids()));

@@ -46,7 +46,7 @@ Arquitectura en capas ligera — no hexagonal completa:
 
 - Tenant = `organizations`
 - Usuarios vinculados vía `organization_members`
-- RLS: `organization_id IN (SELECT user_organization_ids())`
+- RLS: `organization_id IN (SELECT private.user_organization_ids())`
 - La API usa el JWT del usuario → Supabase aplica RLS automáticamente
 
 ## Flujo IA (implementado)

@@ -1,5 +1,5 @@
--- 00008 revocó EXECUTE a authenticated en user_organization_ids().
--- Las políticas RLS invocan esa función con el rol de sesión; sin EXECUTE
--- authenticated no ve filas (dashboard vacío, E2E falla).
--- anon sigue sin EXECUTE → no es RPC pública vía PostgREST.
-GRANT EXECUTE ON FUNCTION public.user_organization_ids() TO authenticated;
+-- Las políticas RLS invocan el helper privado con el rol de sesión.
+-- authenticated necesita EXECUTE; anon no debe poder llamarlo por RPC.
+GRANT USAGE ON SCHEMA private TO authenticated, service_role;
+GRANT EXECUTE ON FUNCTION private.user_organization_ids() TO authenticated, service_role;
+REVOKE EXECUTE ON FUNCTION private.user_organization_ids() FROM PUBLIC, anon;

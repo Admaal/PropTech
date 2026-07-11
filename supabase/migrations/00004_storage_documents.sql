@@ -17,19 +17,19 @@ CREATE POLICY documents_storage_insert ON storage.objects
   FOR INSERT TO authenticated
   WITH CHECK (
     bucket_id = 'documents'
-    AND (storage.foldername(name))[1]::uuid IN (SELECT user_organization_ids())
+    AND (storage.foldername(name))[1]::uuid IN (SELECT private.user_organization_ids())
   );
 
 CREATE POLICY documents_storage_select ON storage.objects
   FOR SELECT TO authenticated
   USING (
     bucket_id = 'documents'
-    AND (storage.foldername(name))[1]::uuid IN (SELECT user_organization_ids())
+    AND (storage.foldername(name))[1]::uuid IN (SELECT private.user_organization_ids())
   );
 
 CREATE POLICY documents_storage_delete ON storage.objects
   FOR DELETE TO authenticated
   USING (
     bucket_id = 'documents'
-    AND (storage.foldername(name))[1]::uuid IN (SELECT user_organization_ids())
+    AND (storage.foldername(name))[1]::uuid IN (SELECT private.user_organization_ids())
   );

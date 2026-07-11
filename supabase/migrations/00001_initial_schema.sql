@@ -1,3 +1,8 @@
+-- Helpers internos no deben estar en el esquema expuesto por PostgREST.
+CREATE SCHEMA IF NOT EXISTS private;
+REVOKE ALL ON SCHEMA private FROM PUBLIC;
+GRANT USAGE ON SCHEMA private TO authenticated, service_role;
+
 -- organizations: tenant SaaS (agencia / inversor)
 CREATE TABLE organizations (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -85,15 +90,15 @@ CREATE INDEX idx_analyses_org_status ON document_analyses(organization_id, statu
 CREATE INDEX idx_analyses_document ON document_analyses(document_id);
 
 -- Función helper RLS: orgs del usuario autenticado
-CREATE OR REPLACE FUNCTION user_organization_ids()
+CREATE OR REPLACE FUNCTION private.user_organization_ids()
 RETURNS SETOF UUID
 LANGUAGE sql
 SECURITY DEFINER
 STABLE
-SET search_path = public
+SET search_path = ''
 AS $$
   SELECT organization_id
-  FROM organization_members
+  FROM public.organization_members
   WHERE user_id = auth.uid()
 $$;
 
