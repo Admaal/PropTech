@@ -10,6 +10,7 @@
     "test:e2e:full": "playwright test --grep @full-stack",
     "screenshots": "node scripts/capture-screenshots.mjs"
   },
+  "packageManager": "pnpm@10.28.0",
   "engines": {
     "node": ">=22"
   },
