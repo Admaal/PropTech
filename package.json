@@ -14,6 +14,9 @@
     "node": ">=22"
   },
   "pnpm": {
+    "overrides": {
+      "brace-expansion@>=1.0.0 <2": "1.1.16"
+    },
     "onlyBuiltDependencies": [
       "esbuild",
       "sharp",
