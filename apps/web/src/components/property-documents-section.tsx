@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import { useRouter } from "next/navigation";
 import type { DocumentAnalysisWithFilename } from "@proptech/shared";
 import { DocumentDropzone } from "@/components/document-dropzone";
 import { PropertyAnalysesHistory } from "@/components/property-analyses-history";
@@ -27,7 +26,6 @@ export function PropertyDocumentsSection({
   propertyId,
   initialAnalyses,
 }: PropertyDocumentsSectionProps) {
-  const router = useRouter();
   const [refreshKey, setRefreshKey] = useState(0);
   const [activeAnalysisId, setActiveAnalysisId] = useState<string | null>(null);
   const [notice, setNotice] = useState<UploadNotice | null>(null);
@@ -40,9 +38,8 @@ export function PropertyDocumentsSection({
         text: "Documento recibido. Analizando con IA…",
       });
       setRefreshKey((k) => k + 1);
-      router.refresh();
     },
-    [router],
+    [],
   );
 
   const handleUploadError = useCallback((message: string) => {

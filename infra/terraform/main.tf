@@ -158,7 +158,8 @@ resource "google_cloud_run_v2_service" "mcp_ai" {
           cpu    = "1"
           memory = "512Mi"
         }
-        cpu_idle = true
+        # CPU activa tras el 202: runAnalysis sigue en background con Gemini.
+        cpu_idle = false
       }
     }
 

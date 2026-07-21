@@ -35,6 +35,7 @@ export function AnalysisPanel({
   const [analysis, setAnalysis] = useState<DocumentAnalysis | null>(seed);
   const [error, setError] = useState<string | null>(null);
   const [showEngineWarmup, setShowEngineWarmup] = useState(false);
+  const [elapsedSec, setElapsedSec] = useState(0);
   const pendingSinceRef = useRef<number | null>(null);
 
   const poll = useCallback(async () => {
@@ -95,7 +96,10 @@ export function AnalysisPanel({
   useEffect(() => {
     if (!isPending) {
       pendingSinceRef.current = null;
-      const timer = setTimeout(() => setShowEngineWarmup(false), 0);
+      const timer = setTimeout(() => {
+        setShowEngineWarmup(false);
+        setElapsedSec(0);
+      }, 0);
       return () => clearTimeout(timer);
     }
 
@@ -105,8 +109,21 @@ export function AnalysisPanel({
 
     const elapsed = Date.now() - pendingSinceRef.current;
     const delay = Math.max(0, 3_000 - elapsed);
-    const timer = setTimeout(() => setShowEngineWarmup(true), delay);
-    return () => clearTimeout(timer);
+    const warmupTimer = setTimeout(() => setShowEngineWarmup(true), delay);
+
+    const tickElapsed = () => {
+      if (pendingSinceRef.current == null) return;
+      setElapsedSec(
+        Math.floor((Date.now() - pendingSinceRef.current) / 1000),
+      );
+    };
+    tickElapsed();
+    const elapsedTimer = setInterval(tickElapsed, 1000);
+
+    return () => {
+      clearTimeout(warmupTimer);
+      clearInterval(elapsedTimer);
+    };
   }, [isPending, analysis?.status]);
 
   if (error) {
@@ -133,8 +150,13 @@ export function AnalysisPanel({
         </div>
         {showEngineWarmup && (
           <p className="mt-3 text-xs text-muted-foreground">
-            Preparando el motor de análisis… La primera vez puede tardar un
-            poco más.
+            Preparando el motor de análisis… La primera vez puede tardar entre 1
+            y 3 minutos (arranque en frío + IA).
+            {elapsedSec > 0 && (
+              <span className="mt-1 block tabular-nums">
+                Tiempo transcurrido: {elapsedSec}s
+              </span>
+            )}
           </p>
         )}
       </div>
