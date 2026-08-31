@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { DEMO_ACCOUNTS, DEMO_DAILY_ANALYSIS_LIMIT } from "@/lib/demo-mode";
 
@@ -11,31 +10,36 @@ interface LoginFormProps {
 }
 
 export function LoginForm({ demoEnabled, apiReady = true }: LoginFormProps) {
-  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [loadingEmail, setLoadingEmail] = useState<string | null>(null);
 
   async function signIn(loginEmail: string, loginPassword: string) {
     setError(null);
     setLoading(true);
+    setLoadingEmail(null);
 
-    const supabase = createClient();
-    const { error: authError } = await supabase.auth.signInWithPassword({
-      email: loginEmail,
-      password: loginPassword,
-    });
+    try {
+      const supabase = createClient();
+      const { error: authError } = await supabase.auth.signInWithPassword({
+        email: loginEmail,
+        password: loginPassword,
+      });
 
-    setLoading(false);
+      if (authError) {
+        setError(authError.message);
+        return;
+      }
 
-    if (authError) {
-      setError(authError.message);
-      return;
+      window.location.assign("/dashboard");
+    } catch {
+      setError("Error de red al iniciar sesión");
+    } finally {
+      setLoading(false);
+      setLoadingEmail(null);
     }
-
-    router.push("/dashboard");
-    router.refresh();
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -53,11 +57,13 @@ export function LoginForm({ demoEnabled, apiReady = true }: LoginFormProps) {
 
     setError(null);
     setLoading(true);
+    setLoadingEmail(demoEmail);
     setEmail(demoEmail);
 
     try {
       const res = await fetch("/api/demo-login", {
         method: "POST",
+        credentials: "same-origin",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: demoEmail }),
       });
@@ -70,12 +76,12 @@ export function LoginForm({ demoEnabled, apiReady = true }: LoginFormProps) {
         return;
       }
 
-      router.push("/dashboard");
-      router.refresh();
+      window.location.assign("/dashboard");
     } catch {
       setError("Error de red al iniciar sesión demo");
     } finally {
       setLoading(false);
+      setLoadingEmail(null);
     }
   }
 
@@ -92,10 +98,22 @@ export function LoginForm({ demoEnabled, apiReady = true }: LoginFormProps) {
               key={account.id}
               type="button"
               disabled={loading || !demoEnabled || !apiReady}
+              aria-label={account.label}
+              aria-busy={loadingEmail === account.email}
               onClick={() => void handleDemoLogin(account.email)}
               className="rounded-lg border border-border bg-background px-4 py-3 text-left text-sm font-medium transition-colors hover:bg-muted disabled:opacity-60"
             >
-              {account.label}
+              {loadingEmail === account.email ? (
+                <span className="inline-flex items-center gap-2">
+                  <span
+                    className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent"
+                    aria-hidden="true"
+                  />
+                  <span>Accediendo…</span>
+                </span>
+              ) : (
+                account.label
+              )}
             </button>
           ))}
         </div>
@@ -153,9 +171,20 @@ export function LoginForm({ demoEnabled, apiReady = true }: LoginFormProps) {
           <button
             type="submit"
             disabled={loading}
+            aria-busy={loading && loadingEmail === null}
             className="w-full rounded-lg bg-primary px-4 py-3 text-sm font-medium text-primary-foreground disabled:opacity-60"
           >
-            {loading ? "Entrando…" : "Iniciar sesión"}
+            {loading && loadingEmail === null ? (
+              <span className="inline-flex items-center justify-center gap-2">
+                <span
+                  className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent"
+                  aria-hidden="true"
+                />
+                <span>Entrando…</span>
+              </span>
+            ) : (
+              "Iniciar sesión"
+            )}
           </button>
         </form>
       </details>
