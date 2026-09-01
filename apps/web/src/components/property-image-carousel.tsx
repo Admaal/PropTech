@@ -2,6 +2,10 @@
 
 import Image from "next/image";
 import { useCallback, useMemo, useState } from "react";
+import {
+  isUnsplashImageUrl,
+  optimizeImageUrl,
+} from "@/lib/optimize-image-url";
 
 interface PropertyImageCarouselProps {
   images: string[];
@@ -38,19 +42,33 @@ export function PropertyImageCarousel({
   if (visibleImages.length === 0) return null;
 
   const hasMultiple = visibleImages.length > 1;
+  const currentImage = visibleImages[safeIndex];
 
   return (
     <div className="relative overflow-hidden rounded-lg border border-border bg-muted">
       <div className="relative aspect-16/10 w-full">
-        <Image
-          src={visibleImages[safeIndex]}
-          alt={`${alt} — foto ${safeIndex + 1}`}
-          fill
-          className="object-cover"
-          sizes="(max-width: 1024px) 100vw, 50vw"
-          priority={safeIndex === 0}
-          onError={() => markFailed(visibleImages[safeIndex])}
-        />
+        {isUnsplashImageUrl(currentImage) ? (
+          <Image
+            src={optimizeImageUrl(currentImage, 900)}
+            alt={`${alt} — foto ${safeIndex + 1}`}
+            fill
+            className="object-cover"
+            sizes="(max-width: 1024px) 100vw, 50vw"
+            quality={75}
+            priority={safeIndex === 0}
+            onError={() => markFailed(currentImage)}
+          />
+        ) : (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={currentImage}
+            alt={`${alt} — foto ${safeIndex + 1}`}
+            className="absolute inset-0 h-full w-full object-cover"
+            loading={safeIndex === 0 ? "eager" : "lazy"}
+            decoding="async"
+            onError={() => markFailed(currentImage)}
+          />
+        )}
       </div>
       {hasMultiple && (
         <>

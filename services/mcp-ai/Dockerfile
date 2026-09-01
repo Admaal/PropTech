@@ -3,29 +3,22 @@ RUN corepack enable
 WORKDIR /app
 
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json tsconfig.base.json ./
-RUN printf "node-linker=hoisted\n" > .npmrc
 COPY packages/shared ./packages/shared
 COPY services/mcp-ai ./services/mcp-ai
 
 RUN pnpm install --frozen-lockfile
 RUN pnpm --filter @proptech/shared build
 RUN pnpm --filter @proptech/mcp-ai build
+RUN pnpm deploy --filter @proptech/mcp-ai --prod --legacy /app/deploy/mcp-ai
 
 FROM node:22-alpine AS runner
-RUN corepack enable
 WORKDIR /app
 ENV NODE_ENV=production
 
-COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
-RUN printf "node-linker=hoisted\n" > .npmrc
-COPY packages/shared/package.json ./packages/shared/
-COPY services/mcp-ai/package.json ./services/mcp-ai/
+RUN addgroup -S nodejs && adduser -S nextjs -G nodejs
 
-RUN pnpm install --frozen-lockfile --prod --filter @proptech/mcp-ai...
+COPY --from=builder --chown=nextjs:nodejs /app/deploy/mcp-ai ./
 
-COPY --from=builder /app/packages/shared/dist ./packages/shared/dist
-COPY --from=builder /app/services/mcp-ai/dist ./services/mcp-ai/dist
-
-WORKDIR /app/services/mcp-ai
+USER nextjs
 EXPOSE 3002
 CMD ["node", "dist/index.js"]

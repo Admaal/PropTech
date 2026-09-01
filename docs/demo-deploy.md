@@ -85,6 +85,7 @@ Variables aplicadas por Terraform en el server:
 | `NEXT_PUBLIC_SUPABASE_URL` | URL del proyecto Supabase |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Anon key |
 | `NEXT_PUBLIC_API_URL` | `server_url` de Cloud Run |
+| `NEXT_PUBLIC_SITE_URL` | URL pública base para sitemap (opcional; Vercel la detecta si no se define) |
 | `DEMO_USER_PASSWORD` | Contraseña demo (solo servidor Vercel; **no** `NEXT_PUBLIC_*`) |
 
 4. Deploy

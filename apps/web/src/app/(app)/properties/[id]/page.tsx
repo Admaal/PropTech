@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { fetchProperty, fetchAnalyses } from "@/lib/api";
 import { requireAuth } from "@/lib/auth-server";
-import { AppShell } from "@/components/app-shell";
+import { PageHeader } from "@/components/page-header";
 import { PropertyDocumentsSection } from "@/components/property-documents-section";
 import { PropertyLocationMap } from "@/components/property-location-map-loader";
 import { PropertyImageCarousel } from "@/components/property-image-carousel";
@@ -28,12 +28,13 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
   }
 
   return (
-    <AppShell
-      title={property.title}
-      subtitle={`${property.address}, ${property.city}`}
-      backHref="/dashboard"
-      backLabel="← Volver a propiedades"
-    >
+    <>
+      <PageHeader
+        title={property.title}
+        subtitle={`${property.address}, ${property.city}`}
+        backHref="/dashboard"
+        backLabel="← Volver a propiedades"
+      />
       <div className="grid gap-8 lg:grid-cols-2">
         <section className="rounded-lg border border-border bg-card p-6">
           <div className="mb-4 flex items-start justify-between gap-4">
@@ -109,6 +110,6 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
           />
         </section>
       </div>
-    </AppShell>
+    </>
   );
 }

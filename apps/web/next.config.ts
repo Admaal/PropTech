@@ -4,6 +4,8 @@ const nextConfig: NextConfig = {
   transpilePackages: ["@proptech/shared"],
   output: process.env.VERCEL ? undefined : "standalone",
   images: {
+    formats: ["image/avif", "image/webp"],
+    qualities: [75],
     remotePatterns: [
       {
         protocol: "https",

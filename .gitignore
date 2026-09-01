@@ -36,7 +36,10 @@ pnpm-debug.log*
 Thumbs.db
 .idea/
 .vscode/
-.cursor/
+.cursor/*
+!.cursor/rules/
+.cursor/rules/*
+!.cursor/rules/sdd-tdd.mdc
 
 # Scripts locales con IDs reales (usar .example del repo)
 supabase/scripts/link-demo-users.sql

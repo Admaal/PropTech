@@ -1,6 +1,6 @@
 import { fetchAnalyses } from "@/lib/api";
 import { requireAuth } from "@/lib/auth-server";
-import { AppShell } from "@/components/app-shell";
+import { PageHeader } from "@/components/page-header";
 import { AnalysesList } from "@/components/analyses-list";
 
 export default async function AnalysesPage() {
@@ -16,12 +16,13 @@ export default async function AnalysesPage() {
   }
 
   return (
-    <AppShell
-      title="Historial de análisis"
-      subtitle="Documentos procesados por IA (Gemini vía MCP)"
-      backHref="/dashboard"
-      backLabel="← Volver a propiedades"
-    >
+    <>
+      <PageHeader
+        title="Historial de análisis"
+        subtitle="Documentos procesados por IA (Gemini vía MCP)"
+        backHref="/dashboard"
+        backLabel="← Volver a propiedades"
+      />
       {error ? (
         <div className="rounded-lg border border-red-300 bg-red-50 p-6 text-sm text-red-800">
           {error}
@@ -29,6 +30,6 @@ export default async function AnalysesPage() {
       ) : (
         <AnalysesList analyses={analyses} />
       )}
-    </AppShell>
+    </>
   );
 }

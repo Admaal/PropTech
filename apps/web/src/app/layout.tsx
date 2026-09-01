@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist } from "next/font/google";
+import { getSiteUrl } from "@/lib/site-url";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -8,6 +9,7 @@ const geistSans = Geist({
 });
 
 export const metadata: Metadata = {
+  metadataBase: getSiteUrl(),
   title: "PropTech — Inteligencia Inmobiliaria",
   description:
     "Plataforma SaaS para analizar propiedades y riesgo financiero de inquilinos",

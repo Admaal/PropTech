@@ -236,3 +236,30 @@ Do not over-engineer.
 Do not implement future requirements.
 
 Implement only what is requested.
+
+---
+
+# 17. Desarrollo dirigido por especificación (SDD)
+
+**Fase actual:** MVP implementado. El SDD anclado + TDD se aplica desde la próxima
+feature o cambio no trivial; no se retroespecifica el MVP existente.
+
+- Crea una spec corta en `docs/specs/` usando `docs/specs/_template.md`. Describe
+  comportamiento con criterios EARS, casos límite, fuera de alcance y completa
+  `Riesgos nuevos de esta fase`.
+- La spec empieza con `confirmed: false`. Pégala completa en el chat y detente:
+  no Plan Mode, tests ni código hasta que el usuario dé un «sí» explícito a esa spec.
+  Si la corrige, vuelve a pegarla y espera de nuevo.
+- Solo en el turno posterior al «sí» cambia `confirmed: true`, entra en Plan Mode y
+  crea tareas que tracen cada criterio `AC-*`.
+- Antes de Build, cada riesgo afirmativo debe tener test, gate (`afterFileEdit`,
+  `stop` o `CI`) y confirmación del usuario. Un «no» también se documenta.
+- TDD comienza con un test real derivado de un `AC-*`, ejecutado y fallando antes de
+  tocar producción. Continúa con GREEN mínimo y REFACTOR sin debilitar el test.
+- Para cambios existentes usa deltas `ADDED`, `MODIFIED` y `REMOVED` cuando aclaren
+  el alcance. Un typo, cambio mecánico obvio o spike desechable no necesita spec.
+
+La skill personal `sdd-tdd` contiene el procedimiento completo. La user rule global
+activa este flujo en otros repositorios. En un proyecto nuevo, **crea o redacta**
+`AGENTS.md` el día 0 (constitución del stack) y espera confirmación; no borres uno
+existente. Si se pide «monta la valla», aplica primero el protocolo de valla del stack.

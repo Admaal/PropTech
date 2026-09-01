@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import {
   MapContainer,
   TileLayer,
@@ -17,6 +18,10 @@ import {
   getPriceTier,
   priceTierMarkerColor,
 } from "@/lib/price-tier";
+import {
+  isUnsplashImageUrl,
+  optimizeImageUrl,
+} from "@/lib/optimize-image-url";
 import "leaflet/dist/leaflet.css";
 
 const MADRID_CENTER: [number, number] = [40.4168, -3.7038];
@@ -124,12 +129,26 @@ export function PropertyMap({
               <Popup>
                 <div className="min-w-[220px] max-w-[260px] text-sm text-[#202020]">
                   {property.image_urls[0] && (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={property.image_urls[0]}
-                      alt={property.title}
-                      className="mb-2 h-28 w-full rounded-md object-cover"
-                    />
+                    isUnsplashImageUrl(property.image_urls[0]) ? (
+                      <Image
+                        src={optimizeImageUrl(property.image_urls[0], 384)}
+                        alt={property.title}
+                        width={384}
+                        height={112}
+                        sizes="260px"
+                        quality={75}
+                        className="mb-2 h-28 w-full rounded-md object-cover"
+                      />
+                    ) : (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={property.image_urls[0]}
+                        alt={property.title}
+                        loading="lazy"
+                        decoding="async"
+                        className="mb-2 h-28 w-full rounded-md object-cover"
+                      />
+                    )
                   )}
                   <p className="font-medium">{property.title}</p>
                   {property.description && (

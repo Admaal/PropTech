@@ -24,6 +24,21 @@ docker push ${REGION}-docker.pkg.dev/${PROJECT_ID}/proptech/server:latest
 docker push ${REGION}-docker.pkg.dev/${PROJECT_ID}/proptech/mcp-ai:latest
 ```
 
+### Medición de tamaño
+
+El stage final usa `pnpm deploy --prod --legacy`, por lo que solo contiene la
+aplicación desplegada y sus dependencias de producción. Medición local del tamaño
+descomprimido (`docker image inspect .Size`) realizada el 2026-09-01:
+
+- `server`: 138.575.145 bytes antes → 60.859.081 bytes después; reducción de
+  77.716.064 bytes (56,1 %).
+- `mcp-ai`: 140.652.228 bytes antes → 62.464.532 bytes después; reducción de
+  78.187.696 bytes (55,6 %).
+
+Las imágenes `proptech-*:optimized` son locales y no se publican automáticamente.
+Para desplegarlas, etiqueta esas imágenes con las rutas de Artifact Registry y
+ejecuta los `docker push` anteriores.
+
 ## 2. Crear secretos en Secret Manager
 
 Tras el primer `terraform apply` (crea los secretos vacíos), añade las versiones:

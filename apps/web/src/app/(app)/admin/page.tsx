@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { requireAuth } from "@/lib/auth-server";
 import { isPlatformAdmin } from "@/lib/platform-admin";
-import { AppShell } from "@/components/app-shell";
+import { PageHeader } from "@/components/page-header";
 import { AdminPanel } from "@/components/admin-panel";
 
 export default async function AdminPage() {
@@ -13,14 +13,14 @@ export default async function AdminPage() {
   }
 
   return (
-    <AppShell
-      title="Administración"
-      subtitle="Gestión cross-org (platform admin)"
-      backHref="/dashboard"
-      backLabel="← Volver al dashboard"
-      showAdminLink={false}
-    >
+    <>
+      <PageHeader
+        title="Administración"
+        subtitle="Gestión cross-org (platform admin)"
+        backHref="/dashboard"
+        backLabel="← Volver al dashboard"
+      />
       <AdminPanel />
-    </AppShell>
+    </>
   );
 }
