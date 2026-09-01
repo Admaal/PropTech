@@ -15,7 +15,7 @@ provider "google" {
 }
 
 resource "google_cloud_run_v2_service" "server" {
-  name     = "proptech-server"
+  name     = var.server_service_name
   location = var.region
   ingress  = "INGRESS_TRAFFIC_ALL"
 
@@ -97,10 +97,18 @@ resource "google_cloud_run_v2_service" "server" {
       max_instance_count = 1
     }
   }
+
+  lifecycle {
+    ignore_changes = [
+      client,
+      client_version,
+      template[0].containers[0].image,
+    ]
+  }
 }
 
 resource "google_cloud_run_v2_service" "mcp_ai" {
-  name     = "proptech-mcp-ai"
+  name     = var.mcp_ai_service_name
   location = var.region
   ingress  = "INGRESS_TRAFFIC_ALL"
 
@@ -168,6 +176,14 @@ resource "google_cloud_run_v2_service" "mcp_ai" {
       max_instance_count = 1
     }
   }
+
+  lifecycle {
+    ignore_changes = [
+      client,
+      client_version,
+      template[0].containers[0].image,
+    ]
+  }
 }
 
 resource "google_cloud_run_v2_service_iam_member" "server_public" {
@@ -188,6 +204,116 @@ resource "google_cloud_run_v2_service_iam_member" "mcp_ai_server_invoker" {
 
 data "google_project" "current" {
   project_id = var.project_id
+}
+
+data "google_billing_account" "current" {
+  billing_account = var.billing_account_id
+}
+
+resource "google_billing_budget" "project" {
+  billing_account = data.google_billing_account.current.id
+  display_name    = "PropTech monthly budget"
+
+  budget_filter {
+    projects = ["projects/${data.google_project.current.number}"]
+  }
+
+  amount {
+    specified_amount {
+      currency_code = "EUR"
+      units         = "1"
+    }
+  }
+
+  threshold_rules {
+    threshold_percent = 0.5
+  }
+
+  threshold_rules {
+    threshold_percent = 1.0
+  }
+}
+
+resource "google_service_account" "cloud_build" {
+  project      = var.project_id
+  account_id   = var.cloud_build_service_account_id
+  display_name = "PropTech Cloud Build deployer"
+}
+
+resource "google_project_iam_member" "cloud_build_log_writer" {
+  project = var.project_id
+  role    = "roles/logging.logWriter"
+  member  = "serviceAccount:${google_service_account.cloud_build.email}"
+}
+
+resource "google_artifact_registry_repository_iam_member" "cloud_build_writer" {
+  project    = var.project_id
+  location   = var.region
+  repository = var.artifact_registry_repository
+  role       = "roles/artifactregistry.writer"
+  member     = "serviceAccount:${google_service_account.cloud_build.email}"
+}
+
+resource "google_cloud_run_v2_service_iam_member" "cloud_build_server_developer" {
+  project  = var.project_id
+  location = var.region
+  name     = google_cloud_run_v2_service.server.name
+  role     = "roles/run.developer"
+  member   = "serviceAccount:${google_service_account.cloud_build.email}"
+}
+
+resource "google_cloud_run_v2_service_iam_member" "cloud_build_mcp_ai_developer" {
+  project  = var.project_id
+  location = var.region
+  name     = google_cloud_run_v2_service.mcp_ai.name
+  role     = "roles/run.developer"
+  member   = "serviceAccount:${google_service_account.cloud_build.email}"
+}
+
+resource "google_service_account_iam_member" "cloud_build_can_act_as_runtime" {
+  service_account_id = "projects/${var.project_id}/serviceAccounts/${data.google_project.current.number}-compute@developer.gserviceaccount.com"
+  role               = "roles/iam.serviceAccountUser"
+  member             = "serviceAccount:${google_service_account.cloud_build.email}"
+}
+
+resource "google_service_account_iam_member" "cloud_build_service_agent_token_creator" {
+  service_account_id = google_service_account.cloud_build.name
+  role               = "roles/iam.serviceAccountTokenCreator"
+  member             = "serviceAccount:service-${data.google_project.current.number}@gcp-sa-cloudbuild.iam.gserviceaccount.com"
+}
+
+resource "google_cloudbuild_trigger" "deploy_main" {
+  project = var.project_id
+  name    = "proptech-deploy-main"
+
+  github {
+    owner = var.github_owner
+    name  = var.github_repository
+
+    push {
+      branch = "^main$"
+    }
+  }
+
+  service_account = google_service_account.cloud_build.id
+  filename        = "cloudbuild.yaml"
+
+  substitutions = {
+    _REGION         = var.region
+    _REPOSITORY     = var.artifact_registry_repository
+    _SERVER_SERVICE = var.server_service_name
+    _MCP_AI_SERVICE = var.mcp_ai_service_name
+  }
+
+  depends_on = [
+    google_project_iam_member.cloud_build_log_writer,
+    google_artifact_registry_repository_iam_member.cloud_build_writer,
+    google_cloud_run_v2_service_iam_member.cloud_build_server_developer,
+    google_cloud_run_v2_service_iam_member.cloud_build_mcp_ai_developer,
+    google_service_account_iam_member.cloud_build_can_act_as_runtime,
+    google_service_account_iam_member.cloud_build_service_agent_token_creator,
+    google_billing_budget.project,
+  ]
 }
 
 # Secret Manager — crear secretos manualmente antes de apply (ver README)

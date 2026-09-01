@@ -1,0 +1,84 @@
+steps:
+  - id: build-server
+    name: gcr.io/cloud-builders/docker
+    waitFor: ["-"]
+    args:
+      - build
+      - -f
+      - apps/server/Dockerfile
+      - -t
+      - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/server:$COMMIT_SHA
+      - .
+
+  - id: build-mcp-ai
+    name: gcr.io/cloud-builders/docker
+    waitFor: ["-"]
+    args:
+      - build
+      - -f
+      - services/mcp-ai/Dockerfile
+      - -t
+      - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/mcp-ai:$COMMIT_SHA
+      - .
+
+  - id: push-server
+    name: gcr.io/cloud-builders/docker
+    waitFor:
+      - build-server
+      - build-mcp-ai
+    args:
+      - push
+      - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/server:$COMMIT_SHA
+
+  - id: push-mcp-ai
+    name: gcr.io/cloud-builders/docker
+    waitFor:
+      - build-server
+      - build-mcp-ai
+    args:
+      - push
+      - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/mcp-ai:$COMMIT_SHA
+
+  - id: deploy-mcp-ai
+    name: gcr.io/google.com/cloudsdktool/cloud-sdk:slim
+    waitFor:
+      - push-server
+      - push-mcp-ai
+    entrypoint: gcloud
+    args:
+      - run
+      - services
+      - update
+      - ${_MCP_AI_SERVICE}
+      - --image=${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/mcp-ai:$COMMIT_SHA
+      - --region=${_REGION}
+      - --project=$PROJECT_ID
+      - --platform=managed
+      - --quiet
+
+  - id deploy-server
+    name: gcr.io/google.com/cloudsdktool/cloud-sdk:slim
+    waitFor:
+      - deploy-mcp-ai
+    entrypoint: gcloud
+    args:
+      - run
+      - services
+      - update
+      - ${_SERVER_SERVICE}
+      - --image=${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/server:$COMMIT_SHA
+      - --region=${_REGION}
+      - --project=$PROJECT_ID
+      - --platform=managed
+      - --quiet
+
+substitutions:
+  _REGION: europe-west1
+  _REPOSITORY: proptech
+  _SERVER_SERVICE: proptech-server
+  _MCP_AI_SERVICE: proptech-mcp-ai
+
+options:
+  logging: CLOUD_LOGGING_ONLY
+
+timeout: 1200s

@@ -14,14 +14,8 @@ import {
 import L from "leaflet";
 import type { PropertyListItem } from "@proptech/shared";
 import { PriceLegend } from "@/components/price-legend";
-import {
-  getPriceTier,
-  priceTierMarkerColor,
-} from "@/lib/price-tier";
-import {
-  isUnsplashImageUrl,
-  optimizeImageUrl,
-} from "@/lib/optimize-image-url";
+import { getPriceTier, priceTierMarkerColor } from "@/lib/price-tier";
+import { isUnsplashImageUrl, optimizeImageUrl } from "@/lib/optimize-image-url";
 import "leaflet/dist/leaflet.css";
 
 const MADRID_CENTER: [number, number] = [40.4168, -3.7038];
@@ -84,10 +78,7 @@ export function PropertyMap({
   onFilterByMapChange,
 }: PropertyMapProps) {
   const markers = useMemo(
-    () =>
-      properties.filter(
-        (p) => p.latitude != null && p.longitude != null,
-      ),
+    () => properties.filter((p) => p.latitude != null && p.longitude != null),
     [properties],
   );
 
@@ -109,7 +100,7 @@ export function PropertyMap({
         <MapContainer
           center={MADRID_CENTER}
           zoom={DEFAULT_ZOOM}
-          className="h-[360px] w-full z-0"
+          className="h-90 w-full z-0"
           scrollWheelZoom
         >
           <TileLayer
@@ -127,9 +118,9 @@ export function PropertyMap({
               icon={priceIcon(property.price_monthly)}
             >
               <Popup>
-                <div className="min-w-[220px] max-w-[260px] text-sm text-[#202020]">
-                  {property.image_urls[0] && (
-                    isUnsplashImageUrl(property.image_urls[0]) ? (
+                <div className="min-w-55 max-w-65 text-sm text-[#202020]">
+                  {property.image_urls[0] &&
+                    (isUnsplashImageUrl(property.image_urls[0]) ? (
                       <Image
                         src={optimizeImageUrl(property.image_urls[0], 384)}
                         alt={property.title}
@@ -148,8 +139,7 @@ export function PropertyMap({
                         decoding="async"
                         className="mb-2 h-28 w-full rounded-md object-cover"
                       />
-                    )
-                  )}
+                    ))}
                   <p className="font-medium">{property.title}</p>
                   {property.description && (
                     <p className="mt-1 line-clamp-3 text-xs text-[#555]">

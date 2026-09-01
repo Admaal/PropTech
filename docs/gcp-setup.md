@@ -48,7 +48,7 @@ Esto hace:
 
 ---
 
-## Paso 2 — Build y push de imágenes
+## Paso 2 — Build y push inicial de imágenes
 
 Con Docker en marcha, desde la raíz:
 
@@ -62,6 +62,10 @@ docker build -f services/mcp-ai/Dockerfile -t ${REGION}-docker.pkg.dev/${PROJECT
 docker push ${REGION}-docker.pkg.dev/${PROJECT_ID}/proptech/server:latest
 docker push ${REGION}-docker.pkg.dev/${PROJECT_ID}/proptech/mcp-ai:latest
 ```
+
+Este paso manual solo es necesario para crear o recuperar los servicios por
+primera vez. Los despliegues posteriores se hacen automáticamente con Cloud Build
+usando una etiqueta inmutable derivada del commit.
 
 ---
 
@@ -104,12 +108,24 @@ Anota el output `server_url` — lo necesitarás para Vercel (`NEXT_PUBLIC_API_U
 
 Antes del deploy final, actualiza `cors_origin` en `terraform.tfvars` con tu URL de Vercel y vuelve a `terraform apply`.
 
+Este `terraform apply` también crea el trigger `proptech-deploy-main`, la cuenta
+`proptech-cloud-build` y sus permisos mínimos. El trigger escucha únicamente
+pushes a `main`: construye y publica `server` y `mcp-ai` y actualiza los servicios
+existentes de Cloud Run. No aplica Terraform ni ejecuta despliegues desde pull
+requests.
+
+Después del primer despliegue, para cambios de aplicación basta con hacer push a
+`main`. Los cambios de infraestructura, secretos, variables de producción o
+topología siguen requiriendo `terraform plan` y `terraform apply` manuales.
+
 ---
 
-## Paso 5 — Presupuesto (recomendado)
+## Paso 5 — Presupuesto y alertas
 
-1. **GCP Console** → Billing → Budgets → alerta ~10 €/mes
-2. **Google AI Studio** → API key → límite y alerta similar
+1. Terraform crea un presupuesto de **1 €/mes** para este proyecto, con alertas al
+   50 % y 100 %. El presupuesto avisa, pero no corta automáticamente el consumo.
+2. En **Google AI Studio** → API key, configura un límite y una alerta separados
+   para el uso de Gemini.
 
 ---
 

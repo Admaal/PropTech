@@ -41,3 +41,45 @@ variable "upload_rate_limit_max" {
   default     = 5
   description = "Subidas PDF máximas por usuario y hora"
 }
+
+variable "artifact_registry_repository" {
+  type        = string
+  default     = "proptech"
+  description = "Repositorio Docker de Artifact Registry"
+}
+
+variable "server_service_name" {
+  type        = string
+  default     = "proptech-server"
+  description = "Nombre del servicio server en Cloud Run"
+}
+
+variable "mcp_ai_service_name" {
+  type        = string
+  default     = "proptech-mcp-ai"
+  description = "Nombre del servicio mcp-ai en Cloud Run"
+}
+
+variable "cloud_build_service_account_id" {
+  type        = string
+  default     = "proptech-cloud-build"
+  description = "ID de la cuenta de servicio dedicada a Cloud Build"
+}
+
+variable "billing_account_id" {
+  type        = string
+  nullable    = false
+  description = "ID de la cuenta de facturación para el presupuesto mensual"
+}
+
+variable "github_owner" {
+  type        = string
+  default     = "Admaal"
+  description = "Propietario del repositorio GitHub conectado a Cloud Build"
+}
+
+variable "github_repository" {
+  type        = string
+  default     = "PropTech"
+  description = "Nombre del repositorio GitHub conectado a Cloud Build"
+}

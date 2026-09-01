@@ -8,7 +8,7 @@ Infraestructura mínima para portfolio: **server** (público) + **mcp-ai** (URL 
 - [Terraform](https://www.terraform.io/) >= 1.5
 - Imágenes Docker en Artifact Registry
 
-## 1. Construir y subir imágenes
+## 1. Primer despliegue: construir y subir imágenes
 
 ```bash
 # Desde la raíz del monorepo
@@ -39,6 +39,10 @@ Las imágenes `proptech-*:optimized` son locales y no se publican automáticamen
 Para desplegarlas, etiqueta esas imágenes con las rutas de Artifact Registry y
 ejecuta los `docker push` anteriores.
 
+Estas etiquetas `latest` se utilizan para crear o recuperar los servicios durante
+el primer `terraform apply`. Después, los despliegues de aplicación usan etiquetas
+inmutables por commit mediante Cloud Build.
+
 ## 2. Crear secretos en Secret Manager
 
 Tras el primer `terraform apply` (crea los secretos vacíos), añade las versiones:
@@ -63,7 +67,26 @@ terraform plan
 terraform apply
 ```
 
-## 4. Frontend
+## 4. Despliegues automáticos posteriores
+
+Terraform crea el trigger `proptech-deploy-main`, la identidad dedicada
+`proptech-cloud-build` y sus permisos mínimos. Tras publicar los cambios en GitHub,
+un push a `main` ejecuta [`cloudbuild.yaml`](../../cloudbuild.yaml), que:
+
+1. construye `server` y `mcp-ai`;
+2. publica ambas imágenes con la etiqueta del commit en Artifact Registry;
+3. actualiza `proptech-mcp-ai` y después `proptech-server` en Cloud Run.
+
+Los pull requests y las ramas distintas de `main` no disparan este despliegue.
+GitHub Actions mantiene la validación de lint, tipos y tests. Para cambios de
+Terraform, topología, secretos o variables de producción se debe ejecutar el
+flujo manual de `terraform plan` y `terraform apply`.
+
+Terraform ignora únicamente los cambios de imagen y los metadatos `client` de
+Cloud Run para no sobrescribir un despliegue de Cloud Build en la siguiente
+aplicación de infraestructura.
+
+## 5. Frontend
 
 El frontend (Next.js) se despliega en **Vercel** apuntando a la URL de Cloud Run del server.
 
@@ -105,7 +128,9 @@ Demo online para reclutadores con coste bajo:
 
 Mantén los servicios desplegados (`terraform apply`). No hace falta `destroy` rutinario.
 
-**Presupuesto GCP (manual):** Billing → Budgets → **1 €/mes**, alertas al 50 % y 100 %.
+**Presupuesto GCP (Terraform):** `google_billing_budget.project` mantiene un
+presupuesto de **1 €/mes** para este proyecto, con alertas al 50 % y 100 %.
+Este presupuesto avisa, pero no corta automáticamente el consumo.
 
 ## Modo B — Pausa larga (~0 €/mes)
 
