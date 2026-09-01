@@ -56,7 +56,7 @@ steps:
       - --platform=managed
       - --quiet
 
-  - id deploy-server
+  - id: deploy-server
     name: "gcr.io/google.com/cloudsdktool/cloud-sdk:slim"
     waitFor:
       - deploy-mcp-ai

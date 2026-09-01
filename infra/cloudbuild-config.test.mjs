@@ -17,6 +17,8 @@ assert.match(config, /docker/);
 assert.match(config, /push/);
 assert.match(config, /proptech-server/);
 assert.match(config, /proptech-mcp-ai/);
+assert.match(config, /^\s+- id: deploy-server$/m);
+assert.doesNotMatch(config, /^\s+- id [^\n:]/m);
 assert.match(config, /run/);
 assert.match(config, /update/);
 assert.doesNotMatch(
