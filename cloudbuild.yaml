@@ -7,7 +7,7 @@ steps:
       - -f
       - apps/server/Dockerfile
       - -t
-      - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/server:$COMMIT_SHA
+      - "${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/server:$COMMIT_SHA"
       - .
 
   - id: build-mcp-ai
@@ -18,7 +18,7 @@ steps:
       - -f
       - services/mcp-ai/Dockerfile
       - -t
-      - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/mcp-ai:$COMMIT_SHA
+      - "${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/mcp-ai:$COMMIT_SHA"
       - .
 
   - id: push-server
@@ -28,7 +28,7 @@ steps:
       - build-mcp-ai
     args:
       - push
-      - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/server:$COMMIT_SHA
+      - "${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/server:$COMMIT_SHA"
 
   - id: push-mcp-ai
     name: gcr.io/cloud-builders/docker
@@ -37,10 +37,10 @@ steps:
       - build-mcp-ai
     args:
       - push
-      - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/mcp-ai:$COMMIT_SHA
+      - "${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/mcp-ai:$COMMIT_SHA"
 
   - id: deploy-mcp-ai
-    name: gcr.io/google.com/cloudsdktool/cloud-sdk:slim
+    name: "gcr.io/google.com/cloudsdktool/cloud-sdk:slim"
     waitFor:
       - push-server
       - push-mcp-ai
@@ -50,14 +50,14 @@ steps:
       - services
       - update
       - ${_MCP_AI_SERVICE}
-      - --image=${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/mcp-ai:$COMMIT_SHA
+      - "--image=${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/mcp-ai:$COMMIT_SHA"
       - --region=${_REGION}
       - --project=$PROJECT_ID
       - --platform=managed
       - --quiet
 
   - id deploy-server
-    name: gcr.io/google.com/cloudsdktool/cloud-sdk:slim
+    name: "gcr.io/google.com/cloudsdktool/cloud-sdk:slim"
     waitFor:
       - deploy-mcp-ai
     entrypoint: gcloud
@@ -66,7 +66,7 @@ steps:
       - services
       - update
       - ${_SERVER_SERVICE}
-      - --image=${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/server:$COMMIT_SHA
+      - "--image=${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/server:$COMMIT_SHA"
       - --region=${_REGION}
       - --project=$PROJECT_ID
       - --platform=managed
