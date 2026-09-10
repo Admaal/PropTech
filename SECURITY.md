@@ -37,11 +37,19 @@ Out of scope:
 ## Security architecture (summary)
 
 - **Multi-tenancy:** PostgreSQL Row Level Security on tenant tables; organization membership enforced in policies.
+- **Roles:** `member` can read and create the operations required by uploads; destructive
+  property, document, analysis, and Storage operations require an organization/platform admin.
 - **API:** Bearer JWT validated with Supabase on every request; business logic in services.
-- **Storage:** Private bucket; PDF-only; path scoped by organization.
-- **AI:** Async processing via mcp-ai; jobs validated against DB before service_role; Gemini output validated with Zod before persistence.
+- **Storage:** Private bucket; PDF-only; paths are scoped by organization/property/document UUIDs.
+- **Uploads:** `Idempotency-Key` plus an atomic database reservation prevents duplicate
+  metadata and concurrent quota over-consumption; the database caps ordinary users
+  at three analyses per day instead of trusting a client-supplied limit.
+- **AI:** Async processing via mcp-ai; service-role access is isolated there, jobs use
+  database claims and leases, and Gemini output is validated with Zod before persistence.
 - **Secrets:** Never commit `.env`; production secrets in GCP Secret Manager, Vercel env vars, and GitHub Actions secrets.
 - **Platform admin:** `/admin` gated in middleware + RLS; use a dedicated account with strong password (not demo users).
+- **Demo privacy:** Demo fixtures are synthetic; never upload real personal or financial
+  documents to the hosted demo (see [demo privacy](docs/demo-privacy.md)).
 
 ## Before deploying or forking
 
@@ -55,14 +63,15 @@ Out of scope:
 
 ## Secret scanning
 
-Run before making the repository public:
+Run the repository scan before making the repository public:
 
 ```bash
-# Example with gitleaks (install separately)
-gitleaks detect --source . --verbose
+pnpm scan:secrets
 ```
 
-If anything is found in git history, rotate the exposed credentials and consider rewriting history.
+The scan checks tracked files, local `.env` files (including ignored ones), and
+all reachable Git history without printing secret values. If anything is found,
+rotate the exposed credentials and consider rewriting history before publication.
 
 ## License
 

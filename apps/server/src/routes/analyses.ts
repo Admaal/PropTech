@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { z } from "zod";
 import { AnalysisListQuerySchema } from "@proptech/shared";
 import {
   authMiddleware,
@@ -6,6 +7,7 @@ import {
 } from "../middleware/auth.js";
 import { createUserClient } from "../lib/supabase.js";
 import { AnalysisService } from "../services/analysis.service.js";
+import { requestError } from "../middleware/request-id.js";
 
 import { analysesPollRateLimiter } from "../middleware/rate-limit.js";
 
@@ -32,14 +34,15 @@ analysesRouter.get("/", async (req, res, next) => {
 analysesRouter.get("/:id", async (req, res, next) => {
   try {
     const authReq = req as unknown as AuthenticatedRequest;
+    const id = z.string().uuid().parse(req.params.id);
     const supabase = createUserClient(authReq.accessToken);
     const service = new AnalysisService(supabase);
-    const analysis = await service.getById(req.params.id);
+    const analysis = await service.getById(id);
 
     if (!analysis) {
-      res.status(404).json({
-        error: { code: "NOT_FOUND", message: "Análisis no encontrado" },
-      });
+      res
+        .status(404)
+        .json(requestError(req, "NOT_FOUND", "Análisis no encontrado"));
       return;
     }
 

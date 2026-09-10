@@ -11,6 +11,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - uses: pnpm/action-setup@v4
         with:
@@ -23,6 +25,15 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: Scan secrets (tree + history)
+        run: pnpm scan:secrets
+
+      - name: Check documentation links
+        run: pnpm check:docs
+
+      - name: Infrastructure contracts
+        run: pnpm test:contracts
 
       - name: Audit dependencies (high+)
         run: pnpm audit --audit-level high
@@ -45,6 +56,9 @@ jobs:
       - name: Shared tests (Zod schemas)
         run: pnpm --filter @proptech/shared test
 
+      - name: Web unit tests
+        run: pnpm --filter @proptech/web test
+
       - name: MCP-AI tests (Gemini validation)
         run: pnpm --filter @proptech/mcp-ai test
 
@@ -54,6 +68,10 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL || secrets.NEXT_PUBLIC_SUPABASE_URL || vars.NEXT_PUBLIC_SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY || secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY || vars.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
           DEMO_USER_PASSWORD: ${{ secrets.DEMO_USER_PASSWORD }}
+          RUN_SUPABASE_INTEGRATION: true
+          MEMBER_USER_EMAIL: ${{ secrets.MEMBER_USER_EMAIL }}
+          MEMBER_USER_PASSWORD: ${{ secrets.MEMBER_USER_PASSWORD }}
+          MEMBER_ORGANIZATION_ID: ${{ secrets.MEMBER_ORGANIZATION_ID }}
 
       - name: Build server
         run: pnpm --filter @proptech/server build
@@ -68,11 +86,49 @@ jobs:
           NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder
           NEXT_PUBLIC_API_URL: http://localhost:3001
 
+  terraform:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.5.7
+
+      - name: Initialize Terraform without backend
+        run: terraform -chdir=infra/terraform init -backend=false
+
+      - name: Check Terraform formatting
+        run: terraform -chdir=infra/terraform fmt -check
+
+      - name: Validate Terraform
+        run: terraform -chdir=infra/terraform validate
+
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build API image
+        run: docker build -f apps/server/Dockerfile -t proptech-server:ci .
+
+      - name: Build mcp-ai image
+        run: docker build -f services/mcp-ai/Dockerfile -t proptech-mcp-ai:ci .
+
+      - name: Build web image
+        run: |
+          docker build \
+            -f apps/web/Dockerfile \
+            --build-arg NEXT_PUBLIC_SUPABASE_URL=https://placeholder.supabase.co \
+            --build-arg NEXT_PUBLIC_SUPABASE_ANON_KEY=placeholder \
+            --build-arg NEXT_PUBLIC_API_URL=http://localhost:3001 \
+            -t proptech-web:ci .
+
   e2e:
     runs-on: ubuntu-latest
     needs: build-and-test
     if: |
-      (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+      (github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')) ||
       (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository)
     steps:
       - uses: actions/checkout@v4
@@ -98,7 +154,11 @@ jobs:
           DEMO_USER_PASSWORD: ${{ secrets.DEMO_USER_PASSWORD }}
         run: |
           if [ -z "$E2E_BASE_URL" ] || [ -z "$DEMO_USER_PASSWORD" ]; then
-            echo "E2E omitido: configura E2E_BASE_URL y DEMO_USER_PASSWORD en GitHub Secrets"
+            if [ "$GITHUB_REF" = "refs/heads/main" ] || [ "$GITHUB_REF" = "refs/heads/master" ]; then
+              echo "E2E requerido en main: configura E2E_BASE_URL y DEMO_USER_PASSWORD en GitHub Secrets"
+              exit 1
+            fi
+            echo "E2E opcional en pull requests externas: faltan secretos de demo"
             exit 0
           fi
           pnpm test:e2e

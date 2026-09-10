@@ -1,10 +1,14 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import type { GenerateContentResult } from "@google/generative-ai";
 import type { AnalyzeJob } from "@proptech/shared";
-import { ZodError } from "zod";
+import { z, ZodError } from "zod";
 import { createServiceClient } from "./lib/supabase.js";
+import {
+  claimAnalysisJob,
+  markAnalysisFailed,
+  startLeaseHeartbeat,
+} from "./job-recovery.js";
 import { parseGeminiAnalysisJson } from "./parse-analysis-response.js";
-import { validateAnalysisJob } from "./validate-analysis-job.js";
 
 function buildSystemPrompt(): string {
   const now = new Date();
@@ -50,12 +54,62 @@ const DEFAULT_MODELS = [
   "gemini-2.5-flash-lite",
 ];
 
+const RecoverableAnalysisRowsSchema = z.array(
+  z.object({
+    id: z.string().uuid(),
+    document_id: z.string().uuid(),
+    organization_id: z.string().uuid(),
+    documents: z.union([
+      z.object({ storage_path: z.string().min(1) }),
+      z.array(z.object({ storage_path: z.string().min(1) })),
+      z.null(),
+    ]),
+  }),
+);
+
 export function resolveGeminiModels(): string[] {
   const fromEnv = process.env.GEMINI_MODEL?.trim();
   if (fromEnv) {
     return fromEnv.split(",").map((m) => m.trim()).filter(Boolean);
   }
   return DEFAULT_MODELS;
+}
+
+export async function reconcileAnalysisJobs(): Promise<void> {
+  const supabase = createServiceClient();
+  const { data, error } = await supabase
+    .from("document_analyses")
+    .select("id, document_id, organization_id, documents(storage_path)")
+    .in("status", ["pending", "processing", "failed"])
+    .order("created_at", { ascending: true })
+    .limit(20);
+
+  if (error) {
+    console.error("[mcp-ai] No se pudieron reconciliar jobs IA");
+    return;
+  }
+
+  let rows: z.infer<typeof RecoverableAnalysisRowsSchema>;
+  try {
+    rows = RecoverableAnalysisRowsSchema.parse(data ?? []);
+  } catch {
+    console.error("[mcp-ai] Respuesta inválida al reconciliar jobs IA");
+    return;
+  }
+
+  for (const row of rows) {
+    const document = Array.isArray(row.documents)
+      ? row.documents[0]
+      : row.documents;
+    if (!document) continue;
+
+    void runAnalysis({
+      analysisId: row.id,
+      documentId: row.document_id,
+      organizationId: row.organization_id,
+      storagePath: document.storage_path,
+    });
+  }
 }
 
 function isQuotaError(err: unknown): boolean {
@@ -99,7 +153,10 @@ function friendlyError(err: unknown): string {
       "Define GEMINI_MODEL en .env con modelos vigentes de Google AI Studio."
     );
   }
-  return msg.length > 400 ? `${msg.slice(0, 400)}…` : msg;
+  if (msg.includes("No se pudo descargar")) {
+    return "No se pudo descargar el documento para analizarlo";
+  }
+  return "Error inesperado al procesar el documento con IA";
 }
 
 async function sleep(seconds: number): Promise<void> {
@@ -135,7 +192,7 @@ async function generateWithModels(
       ]);
     } catch (err) {
       lastError = err instanceof Error ? err : new Error(String(err));
-      console.warn(`[mcp-ai] Modelo ${modelName} falló:`, lastError.message);
+      console.warn(`[mcp-ai] Modelo ${modelName} falló`);
 
       if (isQuotaError(err)) {
         const wait = parseRetrySeconds(err);
@@ -155,36 +212,36 @@ async function generateWithModels(
 }
 
 export async function runAnalysis(job: AnalyzeJob): Promise<void> {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
-    await markFailed(job.analysisId, "GEMINI_API_KEY no configurada");
+  const supabase = createServiceClient();
+  let claimed;
+  try {
+    claimed = await claimAnalysisJob(supabase, job.analysisId);
+  } catch {
+    console.error(`[mcp-ai] No se pudo reclamar el job ${job.analysisId}`);
     return;
   }
-
-  const supabase = createServiceClient();
-
-  const invalidReason = await validateAnalysisJob(supabase, job);
-  if (invalidReason) {
-    console.warn(
-      `[mcp-ai] Job rechazado ${job.analysisId}: ${invalidReason}`,
-    );
-    if (invalidReason !== "Análisis no encontrado") {
-      await markFailed(job.analysisId, `Job inválido: ${invalidReason}`);
-    }
+  if (!claimed) {
     return;
   }
 
   const startedAt = Date.now();
-
-  await supabase
-    .from("document_analyses")
-    .update({ status: "processing" })
-    .eq("id", job.analysisId);
+  const stopHeartbeat = startLeaseHeartbeat(supabase, claimed.analysisId);
+  const apiKey = process.env.GEMINI_API_KEY;
 
   try {
+    if (!apiKey) {
+      await markAnalysisFailed(
+        supabase,
+        claimed.analysisId,
+        "GEMINI_API_KEY no configurada",
+        claimed.attemptCount,
+      );
+      return;
+    }
+
     const { data: fileData, error: downloadError } = await supabase.storage
       .from("documents")
-      .download(job.storagePath);
+      .download(claimed.storagePath);
 
     if (downloadError || !fileData) {
       throw new Error(
@@ -203,7 +260,7 @@ export async function runAnalysis(job: AnalyzeJob): Promise<void> {
     const tokensUsed =
       result.response.usageMetadata?.totalTokenCount ?? null;
 
-    const { error: updateError } = await supabase
+    const { data: updatedAnalysis, error: updateError } = await supabase
       .from("document_analyses")
       .update({
         status: "completed",
@@ -215,34 +272,34 @@ export async function runAnalysis(job: AnalyzeJob): Promise<void> {
         duration_ms: durationMs,
         completed_at: new Date().toISOString(),
         error_message: null,
+        lease_until: null,
+        next_retry_at: null,
       })
-      .eq("id", job.analysisId);
+      .eq("id", claimed.analysisId)
+      .eq("status", "processing")
+      .eq("attempt_count", claimed.attemptCount)
+      .select("id")
+      .maybeSingle();
 
     if (updateError) {
       throw new Error(`Error al guardar resultado: ${updateError.message}`);
     }
+    if (!updatedAnalysis) {
+      throw new Error("El lease del análisis ya no pertenece a este worker");
+    }
   } catch (err) {
-    await markFailed(
-      job.analysisId,
-      friendlyError(err),
-      Date.now() - startedAt,
-    );
+    try {
+      await markAnalysisFailed(
+        supabase,
+        job.analysisId,
+        friendlyError(err),
+        claimed.attemptCount,
+        Date.now() - startedAt,
+      );
+    } catch {
+      console.error(`[mcp-ai] No se pudo marcar fallido ${job.analysisId}`);
+    }
+  } finally {
+    stopHeartbeat();
   }
-}
-
-async function markFailed(
-  analysisId: string,
-  message: string,
-  durationMs?: number,
-): Promise<void> {
-  const supabase = createServiceClient();
-  await supabase
-    .from("document_analyses")
-    .update({
-      status: "failed",
-      error_message: message,
-      duration_ms: durationMs ?? null,
-      completed_at: new Date().toISOString(),
-    })
-    .eq("id", analysisId);
 }

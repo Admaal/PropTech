@@ -1,79 +1,119 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { Document } from "@proptech/shared";
+import {
+  DocumentSchema,
+  UploadDocumentResponseSchema,
+  type Document,
+  type UploadDocumentResponse,
+} from "@proptech/shared";
 import { randomUUID } from "node:crypto";
 
-interface DocumentRow {
-  id: string;
-  organization_id: string;
-  property_id: string | null;
-  storage_path: string;
-  filename: string;
-  mime_type: string;
-  created_at: string;
-}
-
-function mapRow(row: DocumentRow): Document {
-  return {
-    id: row.id,
-    organization_id: row.organization_id,
-    property_id: row.property_id,
-    storage_path: row.storage_path,
-    filename: row.filename,
-    mime_type: row.mime_type,
-    created_at: row.created_at,
-  };
+function mapRow(row: unknown): Document {
+  return DocumentSchema.parse(row);
 }
 
 export class DocumentRepository {
   constructor(private readonly supabase: SupabaseClient) {}
 
-  async create(input: {
+  async findExistingUpload(
+    organizationId: string,
+    idempotencyKey: string,
+  ): Promise<UploadDocumentResponse | null> {
+    const { data, error } = await this.supabase
+      .from("documents")
+      .select("*")
+      .eq("organization_id", organizationId)
+      .eq("idempotency_key", idempotencyKey)
+      .maybeSingle();
+
+    if (error) {
+      throw new Error(`Error al consultar idempotencia: ${error.message}`);
+    }
+    if (!data) return null;
+
+    const { data: analysis, error: analysisError } = await this.supabase
+      .from("document_analyses")
+      .select("id")
+      .eq("document_id", data.id)
+      .maybeSingle();
+
+    if (analysisError) {
+      throw new Error(
+        `Error al consultar análisis existente: ${analysisError.message}`,
+      );
+    }
+    if (!analysis) {
+      throw new Error("Documento idempotente sin análisis asociado");
+    }
+
+    return UploadDocumentResponseSchema.parse({
+      document: mapRow(data),
+      analysis_id: analysis.id,
+    });
+  }
+
+  async createPendingWithQuota(input: {
     id: string;
     organizationId: string;
     propertyId: string;
     storagePath: string;
     filename: string;
     mimeType: string;
-  }): Promise<Document> {
-    const { data, error } = await this.supabase
-      .from("documents")
-      .insert({
-        id: input.id,
-        organization_id: input.organizationId,
-        property_id: input.propertyId,
-        storage_path: input.storagePath,
-        filename: input.filename,
-        mime_type: input.mimeType,
-      })
-      .select("*")
-      .single();
+    idempotencyKey: string;
+    dailyLimit: number;
+  }): Promise<{
+    documentId: string;
+    analysisId: string;
+    created: boolean;
+  }> {
+    const { data, error } = await this.supabase.rpc(
+      "create_pending_document",
+      {
+        p_document_id: input.id,
+        p_organization_id: input.organizationId,
+        p_property_id: input.propertyId,
+        p_storage_path: input.storagePath,
+        p_filename: input.filename,
+        p_mime_type: input.mimeType,
+        p_idempotency_key: input.idempotencyKey,
+        p_daily_limit: input.dailyLimit,
+      },
+    );
 
     if (error) {
-      throw new Error(`Error al guardar documento: ${error.message}`);
+      throw new Error(error.message);
     }
 
-    return mapRow(data as DocumentRow);
+    const row = Array.isArray(data) ? data[0] : data;
+    if (
+      !row ||
+      typeof row.document_id !== "string" ||
+      typeof row.analysis_id !== "string" ||
+      typeof row.created !== "boolean"
+    ) {
+      throw new Error("Respuesta inválida al crear documento pendiente");
+    }
+
+    return {
+      documentId: row.document_id,
+      analysisId: row.analysis_id,
+      created: row.created,
+    };
   }
 
-  async createPendingAnalysis(input: {
-    documentId: string;
-    organizationId: string;
-  }): Promise<string> {
+  async findById(id: string): Promise<Document> {
     const { data, error } = await this.supabase
-      .from("document_analyses")
-      .insert({
-        document_id: input.documentId,
-        organization_id: input.organizationId,
-        status: "pending",
-      })
-      .select("id")
+      .from("documents")
+      .select("*")
+      .eq("id", id)
       .single();
 
-    if (error) {
-      throw new Error(`Error al crear análisis: ${error.message}`);
+    if (error || !data) {
+      throw new Error(
+        `Error al consultar documento creado: ${error?.message ?? "sin datos"}`,
+      );
     }
 
-    return data.id as string;
+    return mapRow(data);
   }
 
   buildStoragePath(

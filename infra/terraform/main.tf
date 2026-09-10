@@ -14,12 +14,26 @@ provider "google" {
   region  = var.region
 }
 
+resource "google_service_account" "server_runtime" {
+  project      = var.project_id
+  account_id   = "${var.server_service_name}-runtime"
+  display_name = "PropTech API runtime"
+}
+
+resource "google_service_account" "mcp_ai_runtime" {
+  project      = var.project_id
+  account_id   = "${var.mcp_ai_service_name}-runtime"
+  display_name = "PropTech MCP-AI runtime"
+}
+
 resource "google_cloud_run_v2_service" "server" {
   name     = var.server_service_name
   location = var.region
   ingress  = "INGRESS_TRAFFIC_ALL"
 
   template {
+    service_account = google_service_account.server_runtime.email
+
     containers {
       image = var.server_image
 
@@ -113,6 +127,8 @@ resource "google_cloud_run_v2_service" "mcp_ai" {
   ingress  = "INGRESS_TRAFFIC_ALL"
 
   template {
+    service_account = google_service_account.mcp_ai_runtime.email
+
     containers {
       image = var.mcp_ai_image
 
@@ -199,7 +215,7 @@ resource "google_cloud_run_v2_service_iam_member" "mcp_ai_server_invoker" {
   location = var.region
   name     = google_cloud_run_v2_service.mcp_ai.name
   role     = "roles/run.invoker"
-  member   = "serviceAccount:${data.google_project.current.number}-compute@developer.gserviceaccount.com"
+  member   = "serviceAccount:${google_service_account.server_runtime.email}"
 }
 
 data "google_project" "current" {
@@ -271,7 +287,11 @@ resource "google_cloud_run_v2_service_iam_member" "cloud_build_mcp_ai_developer"
 }
 
 resource "google_service_account_iam_member" "cloud_build_can_act_as_runtime" {
-  service_account_id = "projects/${var.project_id}/serviceAccounts/${data.google_project.current.number}-compute@developer.gserviceaccount.com"
+  for_each = {
+    server = google_service_account.server_runtime.name
+    mcp_ai = google_service_account.mcp_ai_runtime.name
+  }
+  service_account_id = each.value
   role               = "roles/iam.serviceAccountUser"
   member             = "serviceAccount:${google_service_account.cloud_build.email}"
 }
@@ -350,4 +370,29 @@ resource "google_secret_manager_secret" "internal_service_key" {
   replication {
     auto {}
   }
+}
+
+resource "google_secret_manager_secret_iam_member" "server_runtime_secrets" {
+  for_each = {
+    supabase_url         = google_secret_manager_secret.supabase_url.secret_id
+    supabase_anon_key    = google_secret_manager_secret.supabase_anon_key.secret_id
+    internal_service_key = google_secret_manager_secret.internal_service_key.secret_id
+  }
+
+  secret_id = each.value
+  role      = "roles/secretmanager.secretAccessor"
+  member    = "serviceAccount:${google_service_account.server_runtime.email}"
+}
+
+resource "google_secret_manager_secret_iam_member" "mcp_ai_runtime_secrets" {
+  for_each = {
+    supabase_url              = google_secret_manager_secret.supabase_url.secret_id
+    supabase_service_role_key = google_secret_manager_secret.supabase_service_role_key.secret_id
+    gemini_api_key            = google_secret_manager_secret.gemini_api_key.secret_id
+    internal_service_key      = google_secret_manager_secret.internal_service_key.secret_id
+  }
+
+  secret_id = each.value
+  role      = "roles/secretmanager.secretAccessor"
+  member    = "serviceAccount:${google_service_account.mcp_ai_runtime.email}"
 }

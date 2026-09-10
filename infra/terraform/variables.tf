@@ -27,7 +27,11 @@ variable "cors_origin" {
 variable "daily_analysis_quota" {
   type        = number
   default     = 3
-  description = "Máximo de análisis IA por organización y día (0 = sin límite)"
+  description = "Cuota server-side de análisis IA por organización y día"
+  validation {
+    condition     = var.daily_analysis_quota == 3
+    error_message = "La cuota publicada debe ser exactamente 3; los platform admins quedan exentos."
+  }
 }
 
 variable "rate_limit_max" {

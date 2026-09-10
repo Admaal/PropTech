@@ -34,11 +34,10 @@
 - **Platform admin:** cuenta interna creada con script local; no forma parte de la demo pública
 - **Límites demo:** 3 análisis/día/org, 5 subidas/hora/usuario (platform admin exento de cuota y límite de subida)
 
-## Fuera de alcance MVP
+## Límites del MVP
 
-- NestJS, tRPC
-- Dashboard de monitorización del Event Loop
-- Tres roles de negocio (Inversor/Arrendador/Agencia)
-- Testcontainers en CI (post-MVP)
-- Billing / suscripciones
-- Notificaciones por email al completar análisis
+El MVP prioriza la demo multi-tenant, el análisis asíncrono de documentos y sus
+controles de seguridad. Quedan fuera de esta fase la facturación y suscripciones,
+las notificaciones por email, los roles comerciales diferenciados, la
+monitorización operativa avanzada y la sustitución de la infraestructura de
+pruebas por Testcontainers.

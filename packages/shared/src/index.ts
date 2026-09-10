@@ -37,3 +37,5 @@ export type {
   DocumentAnalysisWithFilename,
   AnalysisListQuery,
 } from "./schemas.js";
+
+export { isSecureInternalServiceKey } from "./security.js";

@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { z } from "zod";
 import { PropertyFiltersSchema } from "@proptech/shared";
 import {
   authMiddleware,
@@ -6,6 +7,7 @@ import {
 } from "../middleware/auth.js";
 import { createUserClient } from "../lib/supabase.js";
 import { PropertyService } from "../services/property.service.js";
+import { requestError } from "../middleware/request-id.js";
 
 export const propertiesRouter: Router = Router();
 
@@ -27,14 +29,15 @@ propertiesRouter.get("/", async (req, res, next) => {
 propertiesRouter.get("/:id", async (req, res, next) => {
   try {
     const authReq = req as unknown as AuthenticatedRequest;
+    const id = z.string().uuid().parse(req.params.id);
     const supabase = createUserClient(authReq.accessToken);
     const service = new PropertyService(supabase);
-    const property = await service.getById(req.params.id);
+    const property = await service.getById(id);
 
     if (!property) {
-      res.status(404).json({
-        error: { code: "NOT_FOUND", message: "Propiedad no encontrada" },
-      });
+      res
+        .status(404)
+        .json(requestError(req, "NOT_FOUND", "Propiedad no encontrada"));
       return;
     }
 

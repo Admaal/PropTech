@@ -11,6 +11,7 @@ import {
   DocumentUploadError,
 } from "../services/document.service.js";
 import { uploadRateLimiter } from "../middleware/rate-limit.js";
+import { requestError } from "../middleware/request-id.js";
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -20,6 +21,7 @@ const upload = multer({
 const UploadBodySchema = z.object({
   propertyId: z.string().uuid(),
 });
+const IdempotencyKeySchema = z.string().trim().min(16).max(128);
 
 export const documentsRouter: Router = Router();
 
@@ -34,13 +36,16 @@ documentsRouter.post(
       const authReq = req as unknown as AuthenticatedRequest;
 
       if (!req.file) {
-        res.status(400).json({
-          error: { code: "MISSING_FILE", message: "Archivo PDF requerido" },
-        });
+        res
+          .status(400)
+          .json(requestError(req, "MISSING_FILE", "Archivo PDF requerido"));
         return;
       }
 
       const { propertyId } = UploadBodySchema.parse(req.body);
+      const idempotencyKey = IdempotencyKeySchema.parse(
+        req.header("Idempotency-Key"),
+      );
       const supabase = createUserClient(authReq.accessToken);
       const service = new DocumentService(supabase);
       const result = await service.uploadForProperty({
@@ -48,6 +53,7 @@ documentsRouter.post(
         file: req.file,
         skipQuota: authReq.isPlatformAdmin,
         accessToken: authReq.accessToken,
+        idempotencyKey,
       });
 
       res.status(202).json(result);
@@ -58,10 +64,10 @@ documentsRouter.post(
             ? 404
             : err.code === "QUOTA_EXCEEDED"
               ? 429
+              : err.code === "UPLOAD_ROLLBACK_FAILED"
+                ? 500
               : 400;
-        res.status(status).json({
-          error: { code: err.code, message: err.message },
-        });
+        res.status(status).json(requestError(req, err.code, err.message));
         return;
       }
       next(err);

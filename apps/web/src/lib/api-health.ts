@@ -1,6 +1,7 @@
 import { fetchWithRetry } from "@/lib/fetch-with-retry";
+import { publicEnv } from "@/lib/public-env";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
+const API_URL = publicEnv.NEXT_PUBLIC_API_URL;
 
 export type ApiHealthResult =
   | { status: "ok" }

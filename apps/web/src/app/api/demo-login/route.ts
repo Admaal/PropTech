@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import { z } from "zod";
 import { DEMO_ACCOUNTS } from "@/lib/demo-mode";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
+import { publicEnv } from "@/lib/public-env";
 
 const DEMO_LOGIN_MAX_ATTEMPTS = 10;
 const DEMO_LOGIN_WINDOW_MS = 15 * 60 * 1000;
@@ -61,8 +62,8 @@ export async function POST(request: Request) {
 
   const cookieStore = await cookies();
   const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    publicEnv.NEXT_PUBLIC_SUPABASE_URL,
+    publicEnv.NEXT_PUBLIC_SUPABASE_ANON_KEY,
     {
       cookies: {
         getAll() {
@@ -89,7 +90,10 @@ export async function POST(request: Request) {
   });
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 401 });
+    return NextResponse.json(
+      { error: "Credenciales demo no válidas" },
+      { status: 401 },
+    );
   }
 
   return NextResponse.json({ ok: true });

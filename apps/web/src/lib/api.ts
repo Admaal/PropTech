@@ -4,9 +4,18 @@ import type {
   PropertyListItem,
   UploadDocumentResponse,
 } from "@proptech/shared";
+import {
+  ApiErrorSchema,
+  DocumentAnalysisSchema,
+  DocumentAnalysisWithFilenameSchema,
+  PaginatedPropertiesSchema,
+  PropertyListItemSchema,
+  UploadDocumentResponseSchema,
+} from "@proptech/shared";
 import { fetchWithRetry } from "@/lib/fetch-with-retry";
+import { publicEnv } from "@/lib/public-env";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
+const API_URL = publicEnv.NEXT_PUBLIC_API_URL;
 
 export class ApiError extends Error {
   constructor(
@@ -20,11 +29,11 @@ export class ApiError extends Error {
 }
 
 async function parseError(res: Response): Promise<ApiError> {
-  const body = await res.json().catch(() => ({}));
-  const error = (body as { error?: { code?: string; message?: string } }).error;
+  const body: unknown = await res.json().catch(() => ({}));
+  const parsed = ApiErrorSchema.safeParse(body);
   return new ApiError(
-    error?.message ?? "Error en la petición",
-    error?.code,
+    parsed.success ? parsed.data.error.message : "Error en la petición",
+    parsed.success ? parsed.data.error.code : undefined,
     res.status,
   );
 }
@@ -48,7 +57,7 @@ export async function fetchProperties(
     throw await parseError(res);
   }
 
-  return res.json();
+  return PaginatedPropertiesSchema.parse(await res.json());
 }
 
 export async function fetchProperty(
@@ -64,7 +73,7 @@ export async function fetchProperty(
     throw await parseError(res);
   }
 
-  return res.json();
+  return PropertyListItemSchema.parse(await res.json());
 }
 
 export async function uploadDocument(
@@ -78,7 +87,10 @@ export async function uploadDocument(
 
   const res = await fetchWithRetry(`${API_URL}/api/v1/documents`, {
     method: "POST",
-    headers: { Authorization: `Bearer ${accessToken}` },
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Idempotency-Key": crypto.randomUUID(),
+    },
     body: form,
   });
 
@@ -86,7 +98,7 @@ export async function uploadDocument(
     throw await parseError(res);
   }
 
-  return res.json();
+  return UploadDocumentResponseSchema.parse(await res.json());
 }
 
 export async function fetchAnalysis(
@@ -102,7 +114,7 @@ export async function fetchAnalysis(
     throw await parseError(res);
   }
 
-  return res.json();
+  return DocumentAnalysisSchema.parse(await res.json());
 }
 
 export async function fetchAnalyses(
@@ -121,6 +133,41 @@ export async function fetchAnalyses(
     throw await parseError(res);
   }
 
-  const body = (await res.json()) as { data: DocumentAnalysisWithFilename[] };
-  return body.data;
+  const body: unknown = await res.json();
+  const data =
+    Array.isArray(body)
+      ? body
+      : body !== null && typeof body === "object" && "data" in body
+        ? body.data
+        : undefined;
+  return DocumentAnalysisWithFilenameSchema.array().parse(data);
+}
+
+async function deleteAdminResource(
+  accessToken: string,
+  resource: "properties" | "analyses",
+  id: string,
+): Promise<void> {
+  const res = await fetchWithRetry(`${API_URL}/api/v1/admin/${resource}/${id}`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+
+  if (!res.ok) {
+    throw await parseError(res);
+  }
+}
+
+export function deleteAdminProperty(
+  accessToken: string,
+  propertyId: string,
+): Promise<void> {
+  return deleteAdminResource(accessToken, "properties", propertyId);
+}
+
+export function deleteAdminAnalysis(
+  accessToken: string,
+  analysisId: string,
+): Promise<void> {
+  return deleteAdminResource(accessToken, "analyses", analysisId);
 }

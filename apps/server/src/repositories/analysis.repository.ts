@@ -5,6 +5,10 @@ import type {
   ExtractedData,
   LatestAnalysisSummary,
 } from "@proptech/shared";
+import {
+  DocumentAnalysisSchema,
+  DocumentAnalysisWithFilenameSchema,
+} from "@proptech/shared";
 
 interface AnalysisRow {
   id: string;
@@ -31,7 +35,7 @@ function docFromRow(
 }
 
 function mapRow(row: AnalysisRow): DocumentAnalysis {
-  return {
+  return DocumentAnalysisSchema.parse({
     id: row.id,
     document_id: row.document_id,
     organization_id: row.organization_id,
@@ -45,16 +49,16 @@ function mapRow(row: AnalysisRow): DocumentAnalysis {
     error_message: row.error_message,
     created_at: row.created_at,
     completed_at: row.completed_at,
-  };
+  });
 }
 
 function mapRowWithFilename(row: AnalysisRow): DocumentAnalysisWithFilename {
   const doc = docFromRow(row.documents);
-  return {
+  return DocumentAnalysisWithFilenameSchema.parse({
     ...mapRow(row),
     filename: doc?.filename ?? null,
     property_id: doc?.property_id ?? null,
-  };
+  });
 }
 
 interface LatestAnalysisRow {

@@ -92,14 +92,16 @@ Before writing code, evaluate in order:
 
 # 8. Frontend Rules
 
-- Follow DESIGN.md for all UI: colors, typography, spacing, components, and layout.
-- Maintain a professional SaaS UI (light mode per DESIGN.md, clean layout).
-- Use Tailwind CSS and semantic design tokens from DESIGN.md (e.g. `bg-background`, `text-primary`) — never raw hex in components.
+- Follow the semantic design tokens defined in `apps/web/src/app/globals.css` for
+  colors, typography, spacing, components, and layout.
+- Maintain a professional SaaS UI with a clean, responsive light-mode default.
+- Use Tailwind CSS and semantic design tokens (e.g. `bg-background`, `text-primary`)
+  — never raw hex in components.
 - UI built with custom components (no shadcn/ui dependency).
 - Keep components reusable but not over-abstracted.
 - Use skeleton loaders for async states.
 - Ensure responsive design by default.
-- Dark mode via `theme-toggle` is supported alongside DESIGN.md light defaults.
+- Dark mode via `theme-toggle` is supported alongside the light-mode defaults.
 - Avoid premature UI abstraction layers.
 
 ---
@@ -239,27 +241,39 @@ Implement only what is requested.
 
 ---
 
-# 17. Desarrollo dirigido por especificación (SDD)
+# 17. Specification-Driven Development (SDD)
 
-**Fase actual:** MVP implementado. El SDD anclado + TDD se aplica desde la próxima
-feature o cambio no trivial; no se retroespecifica el MVP existente.
+- For a feature or non-trivial change, create a short spec in `docs/specs/` using
+  `docs/specs/_template.md`. Describe behavior with EARS criteria, edge cases,
+  out-of-scope items, and complete `New risks in this phase`.
+- The spec starts with `confirmed: false`. Paste it in full in the chat and stop:
+  do not enter Plan Mode, write tests, or code until the user gives an explicit
+  "yes" to that specific spec. If the user corrects it, update it, set
+  `confirmed: false` again, paste it, and stop.
+- Only in the turn after the "yes" change `confirmed: true`, enter Plan Mode, and
+  create tasks that trace each `AC-*` criterion.
+- Before Build, each affirmative risk must have a test, a gate (`afterFileEdit`,
+  `stop`, or `CI`), and user confirmation. Record "No" answers as well.
+- TDD starts with a real test derived from an `AC-*` criterion, run and shown
+  failing before touching production code. Then implement the minimum GREEN
+  solution and REFACTOR without weakening the test.
+- For existing changes, use `ADDED`, `MODIFIED`, and `REMOVED` deltas when they
+  clarify the scope. A typo, obvious mechanical change, or disposable spike does
+  not need a spec.
 
-- Crea una spec corta en `docs/specs/` usando `docs/specs/_template.md`. Describe
-  comportamiento con criterios EARS, casos límite, fuera de alcance y completa
-  `Riesgos nuevos de esta fase`.
-- La spec empieza con `confirmed: false`. Pégala completa en el chat y detente:
-  no Plan Mode, tests ni código hasta que el usuario dé un «sí» explícito a esa spec.
-  Si la corrige, vuelve a pegarla y espera de nuevo.
-- Solo en el turno posterior al «sí» cambia `confirmed: true`, entra en Plan Mode y
-  crea tareas que tracen cada criterio `AC-*`.
-- Antes de Build, cada riesgo afirmativo debe tener test, gate (`afterFileEdit`,
-  `stop` o `CI`) y confirmación del usuario. Un «no» también se documenta.
-- TDD comienza con un test real derivado de un `AC-*`, ejecutado y fallando antes de
-  tocar producción. Continúa con GREEN mínimo y REFACTOR sin debilitar el test.
-- Para cambios existentes usa deltas `ADDED`, `MODIFIED` y `REMOVED` cuando aclaren
-  el alcance. Un typo, cambio mecánico obvio o spike desechable no necesita spec.
+---
 
-La skill personal `sdd-tdd` contiene el procedimiento completo. La user rule global
-activa este flujo en otros repositorios. En un proyecto nuevo, **crea o redacta**
-`AGENTS.md` el día 0 (constitución del stack) y espera confirmación; no borres uno
-existente. Si se pide «monta la valla», aplica primero el protocolo de valla del stack.
+# 18. Current Project Phase
+
+- The MVP and the portfolio-readiness hardening phase are implemented.
+- The public repository must pass `pnpm scan:secrets`, `pnpm check:docs`,
+  `pnpm test:contracts`, `pnpm audit --audit-level high`, lint, typecheck,
+  tests, builds, Terraform validation, and the three Docker image builds.
+- Supabase integration tests are mandatory on protected `main`/`master` pushes
+  and require two demo identities plus the negative `member` identity.
+- Real credential rotation/revocation remains a manual publication prerequisite;
+  it is never performed automatically by repository scripts.
+- Local measurements on 2026-09-08 (Windows, warm dependency cache) were
+  approximately 6 seconds for contract tests, 5 seconds for documentation
+  links, 9 seconds for the tree/history secret scan, and 14 seconds for the
+  full build. Re-measure these gates if the repository grows materially.

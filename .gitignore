@@ -36,10 +36,7 @@ pnpm-debug.log*
 Thumbs.db
 .idea/
 .vscode/
-.cursor/*
-!.cursor/rules/
-.cursor/rules/*
-!.cursor/rules/sdd-tdd.mdc
+.cursor/
 
 # Scripts locales con IDs reales (usar .example del repo)
 supabase/scripts/link-demo-users.sql
@@ -66,10 +63,13 @@ override.tf.json
 
 # Deploy local
 .vercel/
+DESIGN.md
 
 # Supabase CLI local
 supabase/.temp/
 supabase/.branches/
 
-# Scripts locales (no versionar; ya trackeados requieren git rm --cached)
-scripts/
+# Specs y planes locales
+docs/specs/*.md
+!docs/specs/_template.md
+!docs/specs/cloud-build-trigger.md

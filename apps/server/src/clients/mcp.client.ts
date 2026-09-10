@@ -1,5 +1,6 @@
 import type { AnalyzeJob } from "@proptech/shared";
 import { createUserClient } from "../lib/supabase.js";
+import { serverConfig } from "../lib/config.js";
 
 async function getCloudRunIdToken(audience: string): Promise<string | undefined> {
   if (!audience.includes(".run.app")) {
@@ -36,8 +37,8 @@ async function markEnqueueFailed(
       })
       .eq("id", analysisId)
       .in("status", ["pending", "processing"]);
-  } catch (err) {
-    console.error(`[mcp] No se pudo marcar failed ${analysisId}:`, err);
+  } catch {
+    console.error(`[mcp] No se pudo marcar failed ${analysisId}`);
   }
 }
 
@@ -49,11 +50,8 @@ async function dispatchAnalysisJobAsync(
   job: AnalyzeJob,
   accessToken: string,
 ): Promise<void> {
-  const baseUrl = (process.env.MCP_SERVER_URL ?? "http://localhost:3002").replace(
-    /\/$/,
-    "",
-  );
-  const internalKey = process.env.INTERNAL_SERVICE_KEY?.trim();
+  const baseUrl = serverConfig.mcpServerUrl.replace(/\/$/, "");
+  const internalKey = serverConfig.internalServiceKey;
   if (!internalKey) {
     const msg = "INTERNAL_SERVICE_KEY no configurada en el server";
     console.error(`[mcp] ${msg} — análisis ${job.analysisId}`);
@@ -85,14 +83,16 @@ async function dispatchAnalysisJobAsync(
     });
 
     if (!res.ok) {
-      const body = await res.text().catch(() => "");
-      const msg = `Encolado falló: HTTP ${res.status}${body ? ` — ${body.slice(0, 120)}` : ""}`;
+      const msg = `Encolado falló: HTTP ${res.status}`;
       console.error(`[mcp] ${msg} (${job.analysisId})`);
       await markEnqueueFailed(job.analysisId, msg, accessToken);
     }
-  } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : String(err);
-    console.error(`[mcp] Error al encolar análisis ${job.analysisId}:`, msg);
-    await markEnqueueFailed(job.analysisId, `Error de red al encolar: ${msg}`, accessToken);
+  } catch {
+    console.error(`[mcp] Error de red al encolar análisis ${job.analysisId}`);
+    await markEnqueueFailed(
+      job.analysisId,
+      "Error de red al encolar el análisis",
+      accessToken,
+    );
   }
 }

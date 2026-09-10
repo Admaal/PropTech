@@ -34,8 +34,8 @@ docs/             → Guías de despliegue
 
 ## Requisitos previos
 
-- Node.js 20+
-- pnpm 9+
+- Node.js 22+
+- pnpm 10.28.0
 - Cuenta [Supabase](https://supabase.com)
 - Docker (opcional, para compose)
 
@@ -69,7 +69,7 @@ pnpm dev
 
 | Variable | Desarrollo local | Producción (Cloud Run) |
 |----------|------------------|------------------------|
-| `DAILY_ANALYSIS_QUOTA` | `0` (sin límite) | `3` |
+| `DAILY_ANALYSIS_QUOTA` | `3` | `3` |
 | Registro | Eliminado de la UI | Deshabilitado en Supabase |
 
 ### Variables obligatorias
@@ -122,18 +122,29 @@ docker compose up --build
 ```
 
 Levanta server (`:3001`), mcp-ai (`:3002`) y web (`:3000`). Requiere `.env` configurado.
+El puerto mcp-ai queda ligado a loopback en Compose y no se publica en la red local.
 
 ## Tests
 
 ```bash
+pnpm scan:secrets                  # árbol, .env locales e historial, sin valores
+pnpm check:docs                    # enlaces Markdown locales
+pnpm test:contracts                # RLS, migraciones, IAM y rollback
+pnpm test                          # suites unitarias de todos los paquetes
 pnpm --filter @proptech/shared test   # schemas Zod
 pnpm --filter @proptech/mcp-ai test   # validación respuesta Gemini
-pnpm --filter @proptech/server test   # PDF/cuotas + RLS cross-org
+pnpm --filter @proptech/server test   # PDF/cuotas + RLS cross-org (integración explícita)
 pnpm test:e2e                         # smoke + upload mockeado (sin cuota ni IA)
 pnpm test:e2e:full                    # admin + upload real + IA (manual o workflow semanal)
 ```
 
-Incluye aislamiento RLS entre `demo-a` y `demo-b`, validación de PDF/cuotas, schemas compartidos, parsing de salida Gemini y E2E Playwright en dos capas:
+Para ejecutar la integración Supabase, define `RUN_SUPABASE_INTEGRATION=true`,
+las credenciales demo y, para el test negativo de `member`,
+`MEMBER_USER_EMAIL`, `MEMBER_USER_PASSWORD` y `MEMBER_ORGANIZATION_ID`.
+
+Incluye aislamiento RLS entre `demo-a` y `demo-b`, permisos negativos de `member`,
+validación de PDF/cuotas, idempotencia y cuota atómica de uploads, recuperación de
+jobs IA, schemas compartidos, parsing de salida Gemini y E2E Playwright:
 
 | Comando | Qué valida | Cuándo |
 |---------|------------|--------|
@@ -142,9 +153,34 @@ Incluye aislamiento RLS entre `demo-a` y `demo-b`, validación de PDF/cuotas, sc
 
 Variables E2E: `DEMO_USER_PASSWORD` (CI), `E2E_BASE_URL` (opcional), `PLATFORM_ADMIN_PASSWORD` (full-stack).
 
+### Validación antes de publicar
+
+Desde un clon limpio, con Docker Desktop iniciado para los tres builds de imagen:
+
+```bash
+pnpm install --frozen-lockfile
+pnpm scan:secrets
+pnpm check:docs
+pnpm test:contracts
+pnpm audit --audit-level high
+pnpm lint
+pnpm typecheck
+pnpm test
+pnpm build
+docker build -f apps/server/Dockerfile -t proptech-server:check .
+docker build -f services/mcp-ai/Dockerfile -t proptech-mcp-ai:check .
+docker build -f apps/web/Dockerfile \
+  --build-arg NEXT_PUBLIC_SUPABASE_URL=https://placeholder.supabase.co \
+  --build-arg NEXT_PUBLIC_SUPABASE_ANON_KEY=placeholder \
+  --build-arg NEXT_PUBLIC_API_URL=http://localhost:3001 \
+  -t proptech-web:check .
+```
+
 ## CI
 
-GitHub Actions (`.github/workflows/ci.yml`): build, typecheck, lint, tests unitarios y RLS en cada push/PR.
+GitHub Actions (`.github/workflows/ci.yml`): auditoría de dependencias, escaneo de
+secretos en árbol e historial, enlaces públicos, contratos de infraestructura,
+Terraform, builds Docker, typecheck, lint, tests unitarios y RLS.
 
 E2E smoke + upload mockeado en push a `main` y en **pull requests del mismo repositorio** (sin consumir cuota demo ni Gemini).
 
@@ -157,8 +193,12 @@ Para tests RLS en CI, configura en GitHub **Settings → Secrets and variables �
 | `SUPABASE_URL` o variable `NEXT_PUBLIC_SUPABASE_URL` | URL del proyecto Supabase |
 | `SUPABASE_ANON_KEY` o variable `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Anon key (pública; puede ser variable) |
 | `DEMO_USER_PASSWORD` | Login demo-a / demo-b en tests RLS y E2E |
+| `MEMBER_USER_EMAIL` / `MEMBER_USER_PASSWORD` | Identidad negativa del rol `member` |
+| `MEMBER_ORGANIZATION_ID` | Organización de prueba de la identidad `member` |
 
-Si no configuras ninguno, los tests RLS se omiten y el resto del CI sigue pasando. Si configuras solo algunos, el CI falla con un mensaje claro.
+En pull requests externas la integración Supabase no puede usar secretos; en
+`main`/`master` el gate RLS requiere explícitamente las credenciales demo y la
+identidad `member`, y falla si faltan o si la integración no se ejecuta.
 
 ## Seguridad
 
@@ -189,9 +229,9 @@ Script usuarios demo: crear cuentas `demo-a@test.com` / `demo-b@test.com` en Sup
 - [Arquitectura](docs/architecture.md)
 - [Despliegue GCP](docs/gcp-setup.md)
 - [Despliegue demo (Vercel)](docs/demo-deploy.md)
+- [Datos de demo y privacidad](docs/demo-privacy.md)
 - [Requisitos](docs/requirements.md)
 - [AGENTS.md](AGENTS.md)
-- [DESIGN.md](DESIGN.md)
 
 ## Licencia
 

@@ -2,16 +2,18 @@ import "./env.js";
 import express from "express";
 import { AnalyzeJobSchema } from "@proptech/shared";
 import { ZodError } from "zod";
-import { resolveGeminiModels, runAnalysis } from "./analyze.js";
+import {
+  reconcileAnalysisJobs,
+  resolveGeminiModels,
+  runAnalysis,
+} from "./analyze.js";
+import { parseMcpConfig } from "./runtime-config.js";
 
-const internalKey = process.env.INTERNAL_SERVICE_KEY?.trim();
-if (!internalKey) {
-  console.error("INTERNAL_SERVICE_KEY es obligatoria en mcp-ai");
-  process.exit(1);
-}
+const runtimeConfig = parseMcpConfig(process.env);
+const { internalServiceKey: internalKey } = runtimeConfig;
 
 const app = express();
-const port = Number(process.env.MCP_PORT ?? 3002);
+const port = runtimeConfig.port;
 
 app.use(express.json({ limit: "1mb" }));
 
@@ -36,7 +38,9 @@ app.post("/analyze", (req, res) => {
   try {
     const job = AnalyzeJobSchema.parse(req.body);
     res.status(202).json({ accepted: true, analysisId: job.analysisId });
-    void runAnalysis(job);
+    void runAnalysis(job).catch(() => {
+      console.error(`[mcp-ai] Fallo inesperado del job ${job.analysisId}`);
+    });
   } catch (err) {
     if (err instanceof ZodError) {
       res.status(400).json({
@@ -50,13 +54,23 @@ app.post("/analyze", (req, res) => {
     res.status(400).json({
       error: {
         code: "INVALID_PAYLOAD",
-        message: err instanceof Error ? err.message : "Payload inválido",
+        message: "Payload inválido",
       },
     });
   }
 });
 
-app.listen(port, () => {
-  console.log(`MCP-AI escuchando en http://localhost:${port}`);
+function scheduleRecovery(): void {
+  void reconcileAnalysisJobs().catch(() => {
+    console.error("[mcp-ai] Falló la reconciliación de jobs");
+  });
+}
+
+const recoveryTimer = setInterval(scheduleRecovery, 60_000);
+recoveryTimer.unref();
+scheduleRecovery();
+
+app.listen(port, "0.0.0.0", () => {
+  console.log(`MCP-AI escuchando en el puerto ${port}`);
   console.log(`Modelos Gemini: ${resolveGeminiModels().join(", ")}`);
 });

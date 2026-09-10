@@ -2,6 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import {
+  deleteAdminAnalysis,
+  deleteAdminProperty,
+} from "@/lib/api";
 import { alertErrorClasses } from "@/lib/ui-styles";
 
 interface Organization {
@@ -165,38 +169,40 @@ export function AdminPanel() {
     if (!confirm("¿Eliminar este inmueble y sus documentos asociados?")) return;
     setBusy(propertyId);
     const supabase = createClient();
-    const { error: err } = await supabase
-      .from("properties")
-      .delete()
-      .eq("id", propertyId);
-    setBusy(null);
-    if (err) {
-      setError(err.message);
+    const { data, error: sessionError } = await supabase.auth.getSession();
+    if (sessionError || !data.session) {
+      setBusy(null);
+      setError("Sesión no disponible");
       return;
     }
-    await loadOrgData(orgId);
+    try {
+      await deleteAdminProperty(data.session.access_token, propertyId);
+      await loadOrgData(orgId);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "No se pudo eliminar");
+    } finally {
+      setBusy(null);
+    }
   }
 
   async function deleteAnalysis(analysis: AnalysisRow) {
     if (!confirm("¿Eliminar este análisis y su documento PDF?")) return;
     setBusy(analysis.id);
     const supabase = createClient();
-
-    if (analysis.storage_path) {
-      await supabase.storage.from("documents").remove([analysis.storage_path]);
-    }
-
-    const { error: err } = await supabase
-      .from("documents")
-      .delete()
-      .eq("id", analysis.document_id);
-
-    setBusy(null);
-    if (err) {
-      setError(err.message);
+    const { data, error: sessionError } = await supabase.auth.getSession();
+    if (sessionError || !data.session) {
+      setBusy(null);
+      setError("Sesión no disponible");
       return;
     }
-    await loadOrgData(orgId);
+    try {
+      await deleteAdminAnalysis(data.session.access_token, analysis.id);
+      await loadOrgData(orgId);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "No se pudo eliminar");
+    } finally {
+      setBusy(null);
+    }
   }
 
   return (

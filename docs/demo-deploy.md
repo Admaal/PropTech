@@ -113,6 +113,6 @@ Si el build falla por el monorepo, Vercel usará `apps/web/vercel.json` con los 
 
 | | Local | Demo pública |
 |---|-------|--------------|
-| `DAILY_ANALYSIS_QUOTA` | `0` (sin límite) | `3` |
+| `DAILY_ANALYSIS_QUOTA` | `3` | `3` |
 | Registro | Ruta eliminada (redirige a login) | Deshabilitado en Supabase |
 | Login | Botones demo A / B | Igual |

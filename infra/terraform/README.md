@@ -1,6 +1,7 @@
 # Despliegue en GCP Cloud Run
 
-Infraestructura mínima para portfolio: **server** (público) + **mcp-ai** (URL pública, invocación restringida por IAM).
+Infraestructura mínima para portfolio: **server** (público) + **mcp-ai** (URL
+pública, invocación restringida por IAM y `X-Internal-Key`).
 
 ## Prerrequisitos
 
@@ -108,10 +109,19 @@ rate_limit_max        = 100
 upload_rate_limit_max = 5
 ```
 
+`daily_analysis_quota` debe permanecer en `3`: la función RPC de uploads aplica
+ese límite en PostgreSQL y solo exime a `platform_admin`. No se debe elevar desde
+el cliente ni desde una variable de entorno no acompañada por una migración.
+
 ## Notas
 
-- mcp-ai usa `INGRESS_TRAFFIC_ALL` con **IAM `run.invoker`** restringido a la service account de Compute (solo el server puede invocarlo). El server envía además `X-Internal-Key` e ID token de Cloud Run.
-- Para demo local usa `docker compose up --build` (ver README raíz). En local el puerto 3002 está expuesto: usa `INTERNAL_SERVICE_KEY` fuerte.
+- mcp-ai usa `INGRESS_TRAFFIC_ALL` con **IAM `run.invoker`** restringido a la
+  service account runtime del API (solo el server puede invocarlo). El server
+  envía además `X-Internal-Key` e ID token de Cloud Run.
+- Terraform crea cuentas runtime separadas para `server` y `mcp-ai`; el primero
+  solo accede a URL/anon/internal y el segundo a service-role/Gemini/internal.
+- Para demo local usa `docker compose up --build` (ver README raíz). El puerto
+  3002 queda ligado a loopback; usa `INTERNAL_SERVICE_KEY` fuerte.
 - **`cpu_idle = true`** en Terraform (request-based billing): Cloud Run solo factura CPU durante peticiones. Sin esto, el coste puede multiplicarse.
 - **Scale-to-zero** (`min_instance_count = 0`): la demo se despierta sola; la primera visita puede tardar ~15 s (UX en `/login`).
 

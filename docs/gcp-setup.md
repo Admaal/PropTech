@@ -73,8 +73,9 @@ usando una etiqueta inmutable derivada del commit.
 
 Primero `terraform apply` crea los secretos vacíos. Luego añade valores desde tu `.env` local (no los subas a Git):
 
-```powershell
-# Sustituye los valores por los de tu .env
+```bash
+# Bash/WSL. En PowerShell usa .\scripts\push-gcp-secrets.ps1.
+# Sustituye los valores por los de tu .env sin imprimirlos en CI.
 echo -n "TU_SUPABASE_URL" | gcloud secrets versions add proptech-supabase-url --data-file=-
 echo -n "TU_ANON_KEY" | gcloud secrets versions add proptech-supabase-anon-key --data-file=-
 echo -n "TU_SERVICE_ROLE_KEY" | gcloud secrets versions add proptech-supabase-service-role-key --data-file=-
@@ -87,6 +88,11 @@ openssl rand -hex 32 | gcloud secrets versions add proptech-internal-service-key
 Guarda el `INTERNAL_SERVICE_KEY` generado: debe coincidir en server y mcp-ai.
 
 Alternativa: `.\scripts\push-gcp-secrets.ps1` (lee `.env` local; requiere `GCP_PROJECT_ID`).
+
+Terraform concede acceso a secretos mediante cuentas runtime separadas: el API no
+recibe `SUPABASE_SERVICE_ROLE_KEY` ni `GEMINI_API_KEY`, y mcp-ai no recibe la
+clave anon del navegador. Retira cualquier permiso antiguo de la cuenta Compute
+predeterminada antes de publicar.
 
 ---
 

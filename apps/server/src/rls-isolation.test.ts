@@ -15,7 +15,7 @@ const anonKey =
 const demoPassword = process.env.DEMO_USER_PASSWORD;
 
 const hasCredentials = Boolean(url && anonKey && demoPassword);
-const anyCredentialSet = Boolean(url || anonKey || demoPassword);
+const integrationEnabled = process.env.RUN_SUPABASE_INTEGRATION === "true";
 
 function rlsRequiredInCi(): boolean {
   return (
@@ -29,16 +29,16 @@ function rlsRequiredInCi(): boolean {
 describe("RLS — configuración CI", () => {
   it("credenciales Supabase completas si alguna está configurada", () => {
     if (!rlsRequiredInCi()) return;
-    // Sin secrets en GitHub: suite RLS se omite; CI sigue verde.
-    if (!anyCredentialSet) return;
     expect(
-      hasCredentials,
-      "Si configuras secrets RLS, necesitas los tres: SUPABASE_URL (o NEXT_PUBLIC_SUPABASE_URL), SUPABASE_ANON_KEY (o NEXT_PUBLIC_SUPABASE_ANON_KEY) y DEMO_USER_PASSWORD",
+      hasCredentials && integrationEnabled,
+      "La integración RLS de main requiere SUPABASE_URL, SUPABASE_ANON_KEY, DEMO_USER_PASSWORD y RUN_SUPABASE_INTEGRATION=true",
     ).toBe(true);
   });
 });
 
-describe.skipIf(!hasCredentials)("RLS — aislamiento cross-org", () => {
+describe.skipIf(!hasCredentials || !integrationEnabled)(
+  "RLS — aislamiento cross-org",
+  () => {
   let tokenA: string;
   let tokenB: string;
 
@@ -123,26 +123,26 @@ describe.skipIf(!hasCredentials)("RLS — aislamiento cross-org", () => {
     expect(property).not.toBeNull();
 
     const documentId = randomUUID();
-    const analysisId = randomUUID();
     const orgId = property!.organization_id;
 
-    const { error: docErr } = await client.from("documents").insert({
-      id: documentId,
-      organization_id: orgId,
-      property_id: property!.id,
-      storage_path: `${orgId}/${property!.id}/${documentId}.pdf`,
-      filename: "rls-test.pdf",
-      mime_type: "application/pdf",
-    });
+    const { data: pending, error: docErr } = await client.rpc(
+      "create_pending_document",
+      {
+        p_document_id: documentId,
+        p_organization_id: orgId,
+        p_property_id: property!.id,
+        p_storage_path: `${orgId}/${property!.id}/${documentId}.pdf`,
+        p_filename: "rls-test.pdf",
+        p_mime_type: "application/pdf",
+        p_idempotency_key: `rls-${randomUUID()}`,
+        p_daily_limit: 0,
+      },
+    );
     expect(docErr).toBeNull();
-
-    const { error: insErr } = await client.from("document_analyses").insert({
-      id: analysisId,
-      document_id: documentId,
-      organization_id: orgId,
-      status: "pending",
-    });
-    expect(insErr).toBeNull();
+    expect(pending).toBeTruthy();
+    const analysisId = (Array.isArray(pending) ? pending[0] : pending)
+      ?.analysis_id as string;
+    expect(analysisId).toBeTruthy();
 
     const { error: updErr } = await client
       .from("document_analyses")
@@ -174,17 +174,24 @@ describe.skipIf(!hasCredentials)("RLS — aislamiento cross-org", () => {
     const documentId = randomUUID();
     const orgId = property!.organization_id;
 
-    const { error: docErr } = await client.from("documents").insert({
-      id: documentId,
-      organization_id: orgId,
-      property_id: property!.id,
-      storage_path: `${orgId}/${property!.id}/${documentId}.pdf`,
-      filename: "rls-test.pdf",
-      mime_type: "application/pdf",
-    });
+    const { data: pending, error: docErr } = await client.rpc(
+      "create_pending_document",
+      {
+        p_document_id: documentId,
+        p_organization_id: orgId,
+        p_property_id: property!.id,
+        p_storage_path: `${orgId}/${property!.id}/${documentId}.pdf`,
+        p_filename: "rls-test.pdf",
+        p_mime_type: "application/pdf",
+        p_idempotency_key: `rls-completed-${randomUUID()}`,
+        p_daily_limit: 0,
+      },
+    );
     expect(docErr).toBeNull();
+    expect(pending).toBeTruthy();
 
     const { error: insErr } = await client.from("document_analyses").insert({
+      id: randomUUID(),
       document_id: documentId,
       organization_id: orgId,
       status: "completed",
@@ -223,4 +230,5 @@ describe.skipIf(!hasCredentials)("RLS — aislamiento cross-org", () => {
 
     expect(error).not.toBeNull();
   });
-});
+  },
+);

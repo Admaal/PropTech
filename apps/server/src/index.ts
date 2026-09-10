@@ -5,25 +5,18 @@ import helmet from "helmet";
 import { propertiesRouter } from "./routes/properties.js";
 import { documentsRouter } from "./routes/documents.js";
 import { analysesRouter } from "./routes/analyses.js";
+import { adminRouter } from "./routes/admin.js";
 import { errorHandler } from "./middleware/error-handler.js";
 import { globalRateLimiter } from "./middleware/rate-limit.js";
+import { requestIdMiddleware } from "./middleware/request-id.js";
 import { serverConfig } from "./lib/config.js";
 
-if (
-  process.env.NODE_ENV === "production" &&
-  serverConfig.dailyAnalysisQuota <= 0
-) {
-  console.error(
-    "DAILY_ANALYSIS_QUOTA debe ser > 0 en producción (p. ej. 3 en Cloud Run)",
-  );
-  process.exit(1);
-}
-
 const app = express();
-const port = Number(process.env.API_PORT ?? 3001);
-const corsOrigin = process.env.CORS_ORIGIN ?? "http://localhost:3000";
+const port = serverConfig.apiPort;
+const corsOrigin = serverConfig.corsOrigin;
 
 app.set("trust proxy", 1);
+app.use(requestIdMiddleware);
 app.use(helmet());
 app.use(cors({ origin: corsOrigin, credentials: true }));
 app.use(express.json());
@@ -36,9 +29,10 @@ app.get("/health", (_req, res) => {
 app.use("/api/v1/properties", propertiesRouter);
 app.use("/api/v1/documents", documentsRouter);
 app.use("/api/v1/analyses", analysesRouter);
+app.use("/api/v1/admin", adminRouter);
 
 app.use(errorHandler);
 
-app.listen(port, () => {
-  console.log(`Server escuchando en http://localhost:${port}`);
+app.listen(port, "0.0.0.0", () => {
+  console.log(`Server escuchando en el puerto ${port}`);
 });

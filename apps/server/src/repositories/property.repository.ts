@@ -1,5 +1,9 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { Property, PropertyFilters } from "@proptech/shared";
+import {
+  PropertySchema,
+  type Property,
+  type PropertyFilters,
+} from "@proptech/shared";
 
 interface PropertyRow {
   id: string;
@@ -19,7 +23,7 @@ interface PropertyRow {
 }
 
 function mapRow(row: PropertyRow): Property {
-  return {
+  return PropertySchema.parse({
     id: row.id,
     organization_id: row.organization_id,
     title: row.title,
@@ -34,7 +38,7 @@ function mapRow(row: PropertyRow): Property {
     description: row.description,
     image_urls: row.image_urls ?? [],
     created_at: row.created_at,
-  };
+  });
 }
 
 export class PropertyRepository {
