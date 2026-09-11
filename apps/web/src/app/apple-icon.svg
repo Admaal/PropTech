@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 180" fill="none" role="img" aria-label="PropTech">
+  <rect width="180" height="180" rx="40" fill="#5757f8"/>
+  <path
+    d="M90 36 36 74.5V140h39.5v-40.5H104.5V140H144V74.5L90 36Z"
+    fill="#ffffff"
+  />
+  <circle cx="131" cy="52" r="13" fill="#ffffff"/>
+</svg>

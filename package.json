@@ -1,0 +1,45 @@
+{
+  "name": "proptech",
+  "private": true,
+  "scripts": {
+    "dev": "pnpm run --parallel --filter @proptech/server --filter @proptech/web --filter @proptech/mcp-ai dev",
+    "build": "pnpm run -r build",
+    "lint": "pnpm run -r lint",
+    "typecheck": "pnpm run -r typecheck",
+    "test": "pnpm run -r test",
+    "test:contracts": "node --test infra/*.test.mjs infra/terraform/*.test.mjs",
+    "scan:secrets": "node scripts/scan-secrets.mjs",
+    "check:docs": "node scripts/check-doc-links.mjs",
+    "test:e2e": "playwright test --grep-invert @full-stack",
+    "test:e2e:full": "playwright test --grep @full-stack",
+    "screenshots": "node scripts/capture-screenshots.mjs"
+  },
+  "packageManager": "pnpm@10.28.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "pnpm": {
+    "overrides": {
+      "brace-expansion@>=1.0.0 <2": "1.1.18",
+      "brace-expansion@>=4.0.0 <5.0.8": "5.0.9",
+      "fast-uri": "3.1.6",
+      "ip-address": "10.3.1",
+      "js-yaml": "4.3.2",
+      "nanoid": "3.3.18",
+      "browserslist": "4.28.7",
+      "postcss": "8.5.23",
+      "hono": "4.12.34",
+      "@hono/node-server": "1.19.15",
+      "qs": "6.16.0",
+      "sharp": "0.35.4"
+    },
+    "onlyBuiltDependencies": [
+      "esbuild",
+      "sharp",
+      "unrs-resolver"
+    ]
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.61.1"
+  }
+}
