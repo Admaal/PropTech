@@ -100,13 +100,26 @@ describe.skipIf(!shouldRun)("uploads — idempotencia y carrera", () => {
   });
 
   it("dos claves distintas no pueden consumir el último cupo a la vez", async () => {
+    // La función evalúa la cuota contando solo los análisis del día (medianoche
+    // UTC) y capea el límite público a 3/día. El test debe medir con el mismo
+    // filtro: contar el histórico total rompería el escenario de "un solo
+    // hueco" en organizaciones con datos de días anteriores.
+    const startOfDayUtc = new Date();
+    startOfDayUtc.setUTCHours(0, 0, 0, 0);
+
     const { count, error: countError } = await client
       .from("document_analyses")
       .select("id", { count: "exact", head: true })
-      .eq("organization_id", organizationId);
+      .eq("organization_id", organizationId)
+      .gte("created_at", startOfDayUtc.toISOString());
 
     expect(countError).toBeNull();
-    const dailyLimit = (count ?? 0) + 1;
+    const analysesToday = count ?? 0;
+    expect(
+      analysesToday,
+      "la cuota pública de hoy (3) ya está agotada; el escenario de último cupo no se puede montar",
+    ).toBeLessThan(3);
+    const dailyLimit = analysesToday + 1;
     const documentIds = [randomUUID(), randomUUID()];
 
     const results = await Promise.all(
