@@ -78,4 +78,14 @@ Arquitectura en capas ligera — no hexagonal completa:
 
 ## Decisiones documentadas
 
-Ver `docs/adr/` para decisiones arquitectónicas formales.
+Decisiones arquitectónicas formales (contexto, decisión, alternativas y consecuencias):
+
+- [ADR-001](adr/001-async-ai-via-mcp.md): IA asíncrona vía servicio MCP separado
+- [ADR-002](adr/002-monorepo-componentes-separables.md): Monorepo con componentes separables
+- [ADR-003](adr/003-rls-y-service-role-aislado.md): RLS como frontera de tenancy y service role aislado
+- [ADR-004](adr/004-idempotencia-y-cuota-atomica-de-uploads.md): Idempotencia y cuota atómica de uploads
+- [ADR-005](adr/005-recuperacion-de-jobs-ia-con-leases.md): Recuperación de jobs IA con claim y leases
+- [ADR-006](adr/006-permisos-destructivos-para-admins.md): Operaciones destructivas reservadas a admins
+- [ADR-007](adr/007-layered-over-hexagonal.md): Capas ligeras en lugar de hexagonal completa
+
+Resumen con trade-offs en el [README](../README.md#decisiones-y-trade-offs).

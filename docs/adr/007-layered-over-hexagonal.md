@@ -1,4 +1,4 @@
-# ADR-004: Capas ligeras en lugar de hexagonal completa
+# ADR-007: Capas ligeras en lugar de hexagonal completa
 
 ## Contexto
 

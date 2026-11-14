@@ -1,8 +1,14 @@
 # PropTech — Plataforma SaaS de Inteligencia Inmobiliaria
 
+[![CI](https://github.com/Admaal/PropTech/actions/workflows/ci.yml/badge.svg)](https://github.com/Admaal/PropTech/actions/workflows/ci.yml)
+[![Licencia: MIT](https://img.shields.io/badge/licencia-MIT-blue.svg)](LICENSE)
+
 Monorepo con frontend Next.js, API Express, Supabase (PostgreSQL + RLS + Auth) y servidor MCP para análisis de documentos con IA.
 
-**Demo en vivo:** [https://proptech-web-kappa.vercel.app](https://proptech-web-kappa.vercel.app)
+**Demo en vivo:** [https://proptech-web-kappa.vercel.app](https://proptech-web-kappa.vercel.app)  
+**Entrar como demo:** [acceso rápido Demo A / Demo B](https://proptech-web-kappa.vercel.app/login) (sin registro)
+
+Arquitectura (diagrama y flujo asíncrono de análisis): [docs/architecture.md](docs/architecture.md)
 
 ## Capturas
 
@@ -31,6 +37,18 @@ supabase/         → Migraciones SQL y seed
 infra/terraform/  → Cloud Run (GCP)
 docs/             → Guías de despliegue
 ```
+
+## Decisiones y trade-offs
+
+| Decisión | Por qué | Descartado | ADR |
+|----------|---------|------------|-----|
+| IA asíncrona vía servicio MCP separado (202 + job) | La API no espera a Gemini ni mezcla IA con transacciones | Llamar Gemini desde Express; cola Redis/BullMQ | [001](docs/adr/001-async-ai-via-mcp.md) |
+| Monorepo con componentes separables | Contratos compartidos y despliegue independiente | Repos separados; monolito de proceso único | [002](docs/adr/002-monorepo-componentes-separables.md) |
+| RLS como frontera de tenancy; `service_role` solo en mcp-ai | El aislamiento vive en la base de datos, no en un filtro de JavaScript | Filtrar solo en la API; dar `service_role` al API | [003](docs/adr/003-rls-y-service-role-aislado.md) |
+| Idempotencia y cuota atómica en la base de datos | Sin carreras de cuota ni duplicados al reintentar | Contar en JS antes de insertar; `POST` sin clave | [004](docs/adr/004-idempotencia-y-cuota-atomica-de-uploads.md) |
+| Claim con leases para jobs de IA | Un job caído se recupera sin bloquear el análisis para siempre | Dejar `processing` sin recuperación; llamar a Gemini en cada entrega | [005](docs/adr/005-recuperacion-de-jobs-ia-con-leases.md) |
+| Permisos destructivos solo para admins | Borrar documentos y análisis es irreversible | Confiar en la interfaz; delete para todos los miembros | [006](docs/adr/006-permisos-destructivos-para-admins.md) |
+| Capas ligeras en lugar de hexagonal completa | Menos interfaces para un MVP; se añadirán cuando haya un segundo adaptador | Hexagonal pura | [007](docs/adr/007-layered-over-hexagonal.md) |
 
 ## Requisitos previos
 
@@ -104,6 +122,8 @@ El login muestra botones de acceso rápido para Demo A y Demo B. El registro no 
 | Platform admin | Sin cuota ni límite de subidas |
 | API global | 100 peticiones / 15 min por IP |
 | Archivos | Solo PDF válido (`%PDF-`), máx. 10 MB |
+
+**Coste:** la demo tiene un tope objetivo de ~10 €/mes, con alertas de presupuesto en Google AI Studio y GCP Billing (ver checklist). El gasto de IA lo controla el límite diario de análisis por organización.
 
 ### Checklist antes de publicar
 
