@@ -6,6 +6,7 @@ import {
   type AuthenticatedRequest,
 } from "../middleware/auth.js";
 import { createUserClient } from "../lib/supabase.js";
+import type { RequestWithId } from "../middleware/request-id.js";
 import {
   DocumentService,
   DocumentUploadError,
@@ -54,6 +55,7 @@ documentsRouter.post(
         skipQuota: authReq.isPlatformAdmin,
         accessToken: authReq.accessToken,
         idempotencyKey,
+        requestId: (req as RequestWithId).requestId,
       });
 
       res.status(202).json(result);

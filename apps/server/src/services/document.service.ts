@@ -34,6 +34,7 @@ export class DocumentService {
     skipQuota?: boolean;
     accessToken: string;
     idempotencyKey: string;
+    requestId: string;
   }): Promise<UploadDocumentResponse> {
     if (input.file.mimetype !== "application/pdf") {
       throw new DocumentUploadError(
@@ -153,6 +154,7 @@ export class DocumentService {
         organizationId: property.organization_id,
       },
       input.accessToken,
+      input.requestId,
     );
 
     return { document, analysis_id: created.analysisId };

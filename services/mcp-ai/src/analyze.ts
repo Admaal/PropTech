@@ -9,6 +9,8 @@ import {
   startLeaseHeartbeat,
 } from "./job-recovery.js";
 import { parseGeminiAnalysisJson } from "./parse-analysis-response.js";
+import { logEvent, type LogFields } from "./logger.js";
+import { newRequestId } from "./request-id.js";
 
 function buildSystemPrompt(): string {
   const now = new Date();
@@ -108,7 +110,7 @@ export async function reconcileAnalysisJobs(): Promise<void> {
       documentId: row.document_id,
       organizationId: row.organization_id,
       storagePath: document.storage_path,
-    });
+    }, newRequestId());
   }
 }
 
@@ -166,6 +168,7 @@ async function sleep(seconds: number): Promise<void> {
 async function generateWithModels(
   apiKey: string,
   base64: string,
+  ctx: LogFields,
 ): Promise<GenerateContentResult> {
   const genAI = new GoogleGenerativeAI(apiKey);
   const models = resolveGeminiModels();
@@ -192,16 +195,23 @@ async function generateWithModels(
       ]);
     } catch (err) {
       lastError = err instanceof Error ? err : new Error(String(err));
-      console.warn(`[mcp-ai] Modelo ${modelName} falló`);
+      logEvent("warn", "modelo falló", { ...ctx, model: modelName });
 
       if (isQuotaError(err)) {
         const wait = parseRetrySeconds(err);
-        console.warn(`[mcp-ai] Cuota 429 — esperando ${wait}s antes del siguiente modelo…`);
+        logEvent("warn", `cuota 429, esperando ${wait}s antes del siguiente modelo`, {
+          ...ctx,
+          model: modelName,
+          status: 429,
+        });
         await sleep(Math.min(wait, 60));
         continue;
       }
       if (isModelUnavailableError(err)) {
-        console.warn(`[mcp-ai] Modelo ${modelName} no disponible — probando siguiente…`);
+        logEvent("warn", "modelo no disponible, probando el siguiente", {
+          ...ctx,
+          model: modelName,
+        });
         continue;
       }
       throw lastError;
@@ -211,18 +221,27 @@ async function generateWithModels(
   throw lastError ?? new Error("Ningún modelo Gemini disponible");
 }
 
-export async function runAnalysis(job: AnalyzeJob): Promise<void> {
+export async function runAnalysis(
+  job: AnalyzeJob,
+  requestId: string,
+): Promise<void> {
+  const ctx: LogFields = {
+    service: "mcp-ai",
+    requestId,
+    analysisId: job.analysisId,
+  };
   const supabase = createServiceClient();
   let claimed;
   try {
     claimed = await claimAnalysisJob(supabase, job.analysisId);
   } catch {
-    console.error(`[mcp-ai] No se pudo reclamar el job ${job.analysisId}`);
+    logEvent("error", "no se pudo reclamar el job", ctx);
     return;
   }
   if (!claimed) {
     return;
   }
+  logEvent("info", "análisis iniciado", { ...ctx, attempt: claimed.attemptCount });
 
   const startedAt = Date.now();
   const stopHeartbeat = startLeaseHeartbeat(supabase, claimed.analysisId);
@@ -252,7 +271,7 @@ export async function runAnalysis(job: AnalyzeJob): Promise<void> {
     const buffer = Buffer.from(await fileData.arrayBuffer());
     const base64 = buffer.toString("base64");
 
-    const result = await generateWithModels(apiKey, base64);
+    const result = await generateWithModels(apiKey, base64, ctx);
 
     const rawText = result.response.text();
     const parsed = parseGeminiAnalysisJson(rawText);
@@ -297,7 +316,7 @@ export async function runAnalysis(job: AnalyzeJob): Promise<void> {
         Date.now() - startedAt,
       );
     } catch {
-      console.error(`[mcp-ai] No se pudo marcar fallido ${job.analysisId}`);
+      logEvent("error", "no se pudo marcar el análisis como fallido", ctx);
     }
   } finally {
     stopHeartbeat();
