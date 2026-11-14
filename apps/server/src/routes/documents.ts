@@ -19,7 +19,7 @@ const upload = multer({
 });
 
 const UploadBodySchema = z.object({
-  propertyId: z.string().uuid(),
+  propertyId: z.guid(),
 });
 const IdempotencyKeySchema = z.string().trim().min(16).max(128);
 

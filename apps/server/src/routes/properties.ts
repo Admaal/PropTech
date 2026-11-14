@@ -29,7 +29,7 @@ propertiesRouter.get("/", async (req, res, next) => {
 propertiesRouter.get("/:id", async (req, res, next) => {
   try {
     const authReq = req as unknown as AuthenticatedRequest;
-    const id = z.string().uuid().parse(req.params.id);
+    const id = z.guid().parse(req.params.id);
     const supabase = createUserClient(authReq.accessToken);
     const service = new PropertyService(supabase);
     const property = await service.getById(id);

@@ -13,10 +13,10 @@ server.tool(
   "analyze_financial_document",
   "Analiza un PDF financiero y actualiza document_analyses en Supabase",
   {
-    analysisId: z.string().uuid(),
-    documentId: z.string().uuid(),
+    analysisId: z.guid(),
+    documentId: z.guid(),
     storagePath: z.string(),
-    organizationId: z.string().uuid(),
+    organizationId: z.guid(),
   },
   async (job) => {
     await runAnalysis(job);

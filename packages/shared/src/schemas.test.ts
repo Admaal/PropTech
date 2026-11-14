@@ -3,7 +3,29 @@ import {
   AnalysisResultSchema,
   AnalyzeJobSchema,
   PropertyFiltersSchema,
+  PropertySchema,
 } from "./schemas.js";
+
+describe("PropertySchema — IDs de la demo", () => {
+  it("acepta los IDs de organización y propiedad del seed de demo", () => {
+    const result = PropertySchema.safeParse({
+      id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+      organization_id: "11111111-1111-1111-1111-111111111111",
+      title: "Piso centro",
+      address: "Calle Mayor 1",
+      city: "Madrid",
+      price_monthly: 1200,
+      sqm: 80,
+      bedrooms: 2,
+      risk_level: null,
+      latitude: null,
+      longitude: null,
+      created_at: "2026-01-01T00:00:00Z",
+    });
+
+    expect(result.success).toBe(true);
+  });
+});
 
 describe("AnalysisResultSchema", () => {
   const valid = {

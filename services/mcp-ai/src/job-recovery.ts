@@ -2,9 +2,9 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 
 const ClaimedAnalysisJobRowSchema = z.object({
-  analysis_id: z.string().uuid(),
-  document_id: z.string().uuid(),
-  organization_id: z.string().uuid(),
+  analysis_id: z.guid(),
+  document_id: z.guid(),
+  organization_id: z.guid(),
   storage_path: z.string().min(1),
   attempt_count: z.number().int().positive(),
 });
