@@ -11,10 +11,10 @@ describe("claimAnalysisJob", () => {
     const supabase = { rpc } as never;
 
     await expect(
-      claimAnalysisJob(supabase, "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"),
+      claimAnalysisJob(supabase, "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"),
     ).resolves.toBeNull();
     expect(rpc).toHaveBeenCalledWith("claim_analysis_job", {
-      p_analysis_id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+      p_analysis_id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
       p_lease_seconds: 300,
     });
   });
@@ -23,11 +23,11 @@ describe("claimAnalysisJob", () => {
     const rpc = vi.fn().mockResolvedValue({
       data: [
         {
-          analysis_id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
-          document_id: "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
-          organization_id: "11111111-1111-1111-1111-111111111111",
+          analysis_id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+          document_id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+          organization_id: "11111111-1111-4111-8111-111111111111",
           storage_path:
-            "11111111-1111-1111-1111-111111111111/property/document.pdf",
+            "11111111-1111-4111-8111-111111111111/property/document.pdf",
           attempt_count: 2,
         },
       ],
@@ -36,10 +36,10 @@ describe("claimAnalysisJob", () => {
     const supabase = { rpc } as never;
 
     await expect(
-      claimAnalysisJob(supabase, "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"),
+      claimAnalysisJob(supabase, "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"),
     ).resolves.toMatchObject({
-      analysisId: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
-      documentId: "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
+      analysisId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+      documentId: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
       attemptCount: 2,
     });
   });
@@ -69,7 +69,7 @@ describe("markAnalysisFailed", () => {
 
     await markAnalysisFailed(
       supabase,
-      "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+      "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
       "Error transitorio",
       1,
     );

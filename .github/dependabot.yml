@@ -10,6 +10,10 @@ updates:
       - dependency-name: "eslint"
         update-types:
           - "version-update:semver-major"
+      # @types/node debe seguir la versión de Node del proyecto (22).
+      - dependency-name: "@types/node"
+        update-types:
+          - "version-update:semver-major"
     groups:
       production-dependencies:
         patterns:
