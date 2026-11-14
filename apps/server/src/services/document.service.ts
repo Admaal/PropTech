@@ -8,7 +8,6 @@ import { isPdfBuffer } from "../lib/pdf-validation.js";
 import { sanitizeFilename } from "../lib/sanitize-filename.js";
 
 const MAX_PDF_BYTES = 10 * 1024 * 1024;
-const PUBLIC_DAILY_ANALYSIS_LIMIT = 3;
 
 export class DocumentUploadError extends Error {
   constructor(
@@ -73,12 +72,7 @@ export class DocumentService {
 
     const safeFilename = sanitizeFilename(input.file.originalname);
     const documentId = this.documents.newDocumentId();
-    const dailyLimit = input.skipQuota
-      ? 0
-      : Math.max(
-          serverConfig.dailyAnalysisQuota,
-          PUBLIC_DAILY_ANALYSIS_LIMIT,
-        );
+    const dailyLimit = input.skipQuota ? 0 : serverConfig.dailyAnalysisQuota;
     const storagePath = this.documents.buildStoragePath(
       property.organization_id,
       property.id,
