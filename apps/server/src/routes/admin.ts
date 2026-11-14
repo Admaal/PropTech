@@ -13,7 +13,7 @@ import {
 import { requestError } from "../middleware/request-id.js";
 
 const IdParamsSchema = z.object({
-  id: z.string().uuid(),
+  id: z.guid(),
 });
 
 export const adminRouter: Router = Router();

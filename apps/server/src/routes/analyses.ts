@@ -34,7 +34,7 @@ analysesRouter.get("/", async (req, res, next) => {
 analysesRouter.get("/:id", async (req, res, next) => {
   try {
     const authReq = req as unknown as AuthenticatedRequest;
-    const id = z.string().uuid().parse(req.params.id);
+    const id = z.guid().parse(req.params.id);
     const supabase = createUserClient(authReq.accessToken);
     const service = new AnalysisService(supabase);
     const analysis = await service.getById(id);

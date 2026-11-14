@@ -56,9 +56,9 @@ const DEFAULT_MODELS = [
 
 const RecoverableAnalysisRowsSchema = z.array(
   z.object({
-    id: z.string().uuid(),
-    document_id: z.string().uuid(),
-    organization_id: z.string().uuid(),
+    id: z.guid(),
+    document_id: z.guid(),
+    organization_id: z.guid(),
     documents: z.union([
       z.object({ storage_path: z.string().min(1) }),
       z.array(z.object({ storage_path: z.string().min(1) })),

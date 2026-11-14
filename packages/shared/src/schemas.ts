@@ -28,8 +28,8 @@ export const PropertyFiltersSchema = z.object({
 export type PropertyFilters = z.infer<typeof PropertyFiltersSchema>;
 
 export const PropertySchema = z.object({
-  id: z.string().uuid(),
-  organization_id: z.string().uuid(),
+  id: z.guid(),
+  organization_id: z.guid(),
   title: z.string(),
   address: z.string(),
   city: z.string(),
@@ -46,7 +46,7 @@ export const PropertySchema = z.object({
 export type Property = z.infer<typeof PropertySchema>;
 
 export const LatestAnalysisSummarySchema = z.object({
-  id: z.string().uuid(),
+  id: z.guid(),
   risk_level: RiskLevelSchema.nullable(),
   solvency_score: z.number().nullable(),
   completed_at: z.string().nullable(),
@@ -88,9 +88,9 @@ export const AnalysisResultSchema = z.object({
 export type AnalysisResult = z.infer<typeof AnalysisResultSchema>;
 
 export const DocumentAnalysisSchema = z.object({
-  id: z.string().uuid(),
-  document_id: z.string().uuid(),
-  organization_id: z.string().uuid(),
+  id: z.guid(),
+  document_id: z.guid(),
+  organization_id: z.guid(),
   status: AnalysisStatusSchema,
   risk_level: RiskLevelSchema.nullable(),
   solvency_score: z.number().nullable(),
@@ -121,9 +121,9 @@ export const PaginatedPropertiesSchema = z.object({
 export type PaginatedProperties = z.infer<typeof PaginatedPropertiesSchema>;
 
 export const DocumentSchema = z.object({
-  id: z.string().uuid(),
-  organization_id: z.string().uuid(),
-  property_id: z.string().uuid().nullable(),
+  id: z.guid(),
+  organization_id: z.guid(),
+  property_id: z.guid().nullable(),
   filename: z.string(),
   storage_path: z.string(),
   mime_type: z.string(),
@@ -133,27 +133,27 @@ export type Document = z.infer<typeof DocumentSchema>;
 
 export const UploadDocumentResponseSchema = z.object({
   document: DocumentSchema,
-  analysis_id: z.string().uuid(),
+  analysis_id: z.guid(),
 });
 export type UploadDocumentResponse = z.infer<typeof UploadDocumentResponseSchema>;
 
 export const AnalyzeJobSchema = z.object({
-  analysisId: z.string().uuid(),
-  documentId: z.string().uuid(),
+  analysisId: z.guid(),
+  documentId: z.guid(),
   storagePath: z.string(),
-  organizationId: z.string().uuid(),
+  organizationId: z.guid(),
 });
 export type AnalyzeJob = z.infer<typeof AnalyzeJobSchema>;
 
 export const DocumentAnalysisWithFilenameSchema = DocumentAnalysisSchema.extend({
   filename: z.string().nullable().optional(),
-  property_id: z.string().uuid().nullable().optional(),
+  property_id: z.guid().nullable().optional(),
 });
 export type DocumentAnalysisWithFilename = z.infer<
   typeof DocumentAnalysisWithFilenameSchema
 >;
 
 export const AnalysisListQuerySchema = z.object({
-  propertyId: z.string().uuid().optional(),
+  propertyId: z.guid().optional(),
 });
 export type AnalysisListQuery = z.infer<typeof AnalysisListQuerySchema>;
