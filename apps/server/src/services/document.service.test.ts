@@ -26,6 +26,7 @@ vi.mock("../repositories/property.repository.js", () => ({
   },
 }));
 
+import { dispatchAnalysisJob } from "../clients/mcp.client.js";
 import { DocumentService } from "./document.service.js";
 
 const fakeSupabase = {
@@ -51,6 +52,7 @@ function upload(skipQuota?: boolean) {
     skipQuota,
     accessToken: "token",
     idempotencyKey: "key-1",
+    requestId: "req-000",
   });
 }
 
@@ -79,6 +81,22 @@ describe("DocumentService.uploadForProperty — límite diario", () => {
 
     expect(repo.createPendingWithQuota).toHaveBeenCalledWith(
       expect.objectContaining({ dailyLimit: 1 }),
+    );
+  });
+
+  it("pasa el requestId del upload al encolar el análisis", async () => {
+    await new DocumentService(fakeSupabase).uploadForProperty({
+      propertyId: "prop-1",
+      file: pdfFile,
+      accessToken: "token",
+      idempotencyKey: "key-1",
+      requestId: "req-123",
+    });
+
+    expect(dispatchAnalysisJob).toHaveBeenCalledWith(
+      expect.objectContaining({ analysisId: "an-1" }),
+      "token",
+      "req-123",
     );
   });
 

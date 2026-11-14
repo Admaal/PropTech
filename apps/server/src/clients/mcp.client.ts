@@ -42,13 +42,18 @@ async function markEnqueueFailed(
   }
 }
 
-export function dispatchAnalysisJob(job: AnalyzeJob, accessToken: string): void {
-  void dispatchAnalysisJobAsync(job, accessToken);
+export function dispatchAnalysisJob(
+  job: AnalyzeJob,
+  accessToken: string,
+  requestId: string,
+): void {
+  void dispatchAnalysisJobAsync(job, accessToken, requestId);
 }
 
 async function dispatchAnalysisJobAsync(
   job: AnalyzeJob,
   accessToken: string,
+  requestId: string,
 ): Promise<void> {
   const baseUrl = serverConfig.mcpServerUrl.replace(/\/$/, "");
   const internalKey = serverConfig.internalServiceKey;
@@ -62,6 +67,7 @@ async function dispatchAnalysisJobAsync(
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
     "X-Internal-Key": internalKey,
+    "X-Request-ID": requestId,
   };
 
   const idToken = await getCloudRunIdToken(baseUrl);

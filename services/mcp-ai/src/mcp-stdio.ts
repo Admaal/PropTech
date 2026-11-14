@@ -3,6 +3,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
 import { runAnalysis } from "./analyze.js";
+import { newRequestId } from "./request-id.js";
 
 const server = new McpServer({
   name: "proptech-mcp-ai",
@@ -19,7 +20,7 @@ server.tool(
     organizationId: z.guid(),
   },
   async (job) => {
-    await runAnalysis(job);
+    await runAnalysis(job, newRequestId());
     return {
       content: [
         {

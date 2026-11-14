@@ -8,6 +8,8 @@ import {
   runAnalysis,
 } from "./analyze.js";
 import { parseMcpConfig } from "./runtime-config.js";
+import { logEvent } from "./logger.js";
+import { resolveRequestId } from "./request-id.js";
 
 const runtimeConfig = parseMcpConfig(process.env);
 const { internalServiceKey: internalKey } = runtimeConfig;
@@ -37,9 +39,14 @@ app.post("/analyze", (req, res) => {
 
   try {
     const job = AnalyzeJobSchema.parse(req.body);
+    const requestId = resolveRequestId(req.header("x-request-id"));
     res.status(202).json({ accepted: true, analysisId: job.analysisId });
-    void runAnalysis(job).catch(() => {
-      console.error(`[mcp-ai] Fallo inesperado del job ${job.analysisId}`);
+    void runAnalysis(job, requestId).catch(() => {
+      logEvent("error", "fallo inesperado del job", {
+        service: "mcp-ai",
+        requestId,
+        analysisId: job.analysisId,
+      });
     });
   } catch (err) {
     if (err instanceof ZodError) {
