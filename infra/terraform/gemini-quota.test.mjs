@@ -18,14 +18,20 @@ assert.match(
 );
 assert.match(quotaTf, /service\s*=\s*"generativelanguage\.googleapis\.com"/);
 
-// Límites diarios por proyecto y modelo, por tier (identificadores de Cloud Quotas).
+// Límites diarios por proyecto y modelo, en los tiers que sí tienen tope definido.
 for (const quotaId of [
   "GenerateRequestsPerDayPerProjectPerModel-FreeTier",
   "GenerateRequestsPerDayPerProjectPerModel-PaidTier2",
-  "GenerateRequestsPerDayPerProjectPerModel-PaidTier3",
 ]) {
   assert.match(quotaTf, new RegExp(`"${quotaId}"`), `falta el quota_id ${quotaId}`);
 }
+
+// Tier 3 queda fuera: su límite es ilimitado y el preference exige email de contacto.
+assert.doesNotMatch(
+  quotaTf,
+  /PaidTier3/,
+  "el tier 3 no debe estar en el tope (exige email de contacto)",
+);
 
 for (const model of [
   "gemini-3.1-flash-lite",
@@ -37,6 +43,13 @@ for (const model of [
 
 assert.match(quotaTf, /preferred_value\s*=\s*var\.gemini_daily_request_cap/);
 assert.match(quotaTf, /dimensions\s*=\s*\{[\s\S]*?model\s*=/);
+
+// Solo se ignora la comprobación de recorte porcentual; la de "por debajo del uso" sigue activa.
+assert.match(
+  quotaTf,
+  /ignore_safety_checks\s*=\s*"QUOTA_DECREASE_PERCENTAGE_TOO_HIGH"/,
+  "debe ignorar solo la comprobación de recorte porcentual",
+);
 
 assert.match(
   variablesTf,

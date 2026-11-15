@@ -12,7 +12,6 @@ locals {
   gemini_quota_ids = [
     "GenerateRequestsPerDayPerProjectPerModel-FreeTier",
     "GenerateRequestsPerDayPerProjectPerModel-PaidTier2",
-    "GenerateRequestsPerDayPerProjectPerModel-PaidTier3",
   ]
   gemini_quota_models = [
     "gemini-3.1-flash-lite",
@@ -31,6 +30,10 @@ resource "google_cloud_quotas_quota_preference" "gemini_daily_cap" {
   quota_id      = each.value.quota_id
   dimensions    = { model = each.value.model }
   justification = "Tope diario de seguridad del presupuesto del portfolio"
+
+  # Recorte grande a propósito (de cientos de miles a 150). Solo se ignora la
+  # comprobación porcentual; la de "por debajo del uso actual" sigue activa.
+  ignore_safety_checks = "QUOTA_DECREASE_PERCENTAGE_TOO_HIGH"
 
   quota_config {
     preferred_value = var.gemini_daily_request_cap
