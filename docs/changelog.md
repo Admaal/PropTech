@@ -19,6 +19,15 @@ El historial anterior es privado y no se reconstruye aquí.
   ADR 005 y este changelog. [#67](https://github.com/Admaal/PropTech/pull/67)
 
 ### Infraestructura y operación
+- **Limpieza de imágenes en Artifact Registry:** el repositorio pasa a estar en Terraform y conserva
+  las 5 últimas versiones de cada imagen; borra lo que tenga más de 7 días y no esté entre ellas, para
+  que el almacenamiento no crezca con cada push a `main`.
+  [#74](https://github.com/Admaal/PropTech/pull/74)
+- **Alerta de DLQ, ajustes:** se probó `auto_close` y `evaluation_missing_data`, la API los rechazó o
+  no hacían falta, y se volvió a la configuración por defecto, que cierra el incidente sola en
+  ~1 minuto. [#71](https://github.com/Admaal/PropTech/pull/71),
+  [#72](https://github.com/Admaal/PropTech/pull/72),
+  [#73](https://github.com/Admaal/PropTech/pull/73)
 - **Estado remoto, alerta de DLQ y quota project:** el estado de Terraform vive en un bucket
   privado y versionado, hay una alerta por email cuando un análisis llega a la DLQ, y el
   `terraform plan` completo ya funciona. [#66](https://github.com/Admaal/PropTech/pull/66)
