@@ -16,8 +16,10 @@ flowchart TB
     Storage[(Storage)]
   end
 
-  subgraph gcp [GCP Cloud Run]
+  subgraph gcp [GCP Cloud Run y Pub/Sub]
     Server[apps/server]
+    Topic[[Pub/Sub analysis-jobs]]
+    DLQ[[analysis-jobs-dlq]]
     MCP[services/mcp-ai]
   end
 
@@ -25,7 +27,9 @@ flowchart TB
   Web --> Auth
   Server --> PG
   Server --> Storage
-  Server -->|HTTP fire-and-forget| MCP
+  Server -->|publica AnalyzeJob| Topic
+  Topic -->|push OIDC, 5 entregas| MCP
+  Topic -.->|tras 5 fallos de infraestructura| DLQ
   MCP --> Gemini[Gemini API]
   MCP -->|service_role + claim/lease| PG
   Web -->|polling| Server

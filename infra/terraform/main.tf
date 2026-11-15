@@ -96,6 +96,15 @@ resource "google_cloud_run_v2_service" "server" {
         name  = "RATE_LIMIT_WINDOW_MS"
         value = "900000"
       }
+      # Corte a Pub/Sub (PR 5b): el análisis se publica en el topic en lugar de llamar a mcp-ai por HTTP.
+      env {
+        name  = "ANALYSIS_TRANSPORT"
+        value = "pubsub"
+      }
+      env {
+        name  = "GCP_PROJECT_ID"
+        value = var.project_id
+      }
 
       resources {
         limits = {
@@ -145,6 +154,15 @@ resource "google_cloud_run_v2_service" "mcp_ai" {
       env {
         name  = "MCP_PORT"
         value = "3002"
+      }
+      # Verificación OIDC del push de Pub/Sub: la audiencia debe coincidir con la de la suscripción.
+      env {
+        name  = "PUBSUB_PUSH_AUDIENCE"
+        value = "${var.mcp_ai_url}/pubsub/analyze"
+      }
+      env {
+        name  = "PUBSUB_PUSH_SERVICE_ACCOUNT"
+        value = google_service_account.analysis_push.email
       }
       env {
         name = "GEMINI_API_KEY"
@@ -220,13 +238,7 @@ resource "google_cloud_run_v2_service_iam_member" "server_public" {
   member   = "allUsers"
 }
 
-resource "google_cloud_run_v2_service_iam_member" "mcp_ai_server_invoker" {
-  project  = var.project_id
-  location = var.region
-  name     = google_cloud_run_v2_service.mcp_ai.name
-  role     = "roles/run.invoker"
-  member   = "serviceAccount:${google_service_account.server_runtime.email}"
-}
+# La cuenta del server ya no invoca mcp-ai: el análisis llega por Pub/Sub (PR 5b).
 
 data "google_project" "current" {
   project_id = var.project_id

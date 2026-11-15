@@ -76,6 +76,12 @@ variable "billing_account_id" {
   description = "ID de la cuenta de facturación para el presupuesto mensual"
 }
 
+variable "mcp_ai_url" {
+  type        = string
+  default     = "https://proptech-mcp-ai-7fhpow7ara-ew.a.run.app"
+  description = "URL pública de mcp-ai en Cloud Run (base del push de Pub/Sub). Debe coincidir con el servicio."
+}
+
 variable "analysis_topic" {
   type        = string
   default     = "analysis-jobs"
