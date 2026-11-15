@@ -7,3 +7,5 @@ cors_origin            = "https://tu-app.vercel.app"
 daily_analysis_quota   = 3
 rate_limit_max         = 100
 upload_rate_limit_max  = 5
+
+alert_email            = "tu-email@ejemplo.invalid"

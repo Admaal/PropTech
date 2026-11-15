@@ -68,6 +68,17 @@ terraform plan
 terraform apply
 ```
 
+### Estado remoto y alertas
+
+- **Estado:** vive en el bucket privado y versionado `gen-lang-client-0665399020-tfstate`
+  (prefijo `terraform/state`). El bucket se creó fuera de Terraform; no tiene acceso público.
+  Cualquiera con permisos sobre el proyecto puede aplicar desde su máquina tras `terraform init`.
+  El CI usa `init -backend=false` y no toca el estado.
+- **Credenciales:** `gcloud auth application-default login`, o exportar
+  `GOOGLE_OAUTH_ACCESS_TOKEN=$(gcloud auth print-access-token)` para un comando suelto.
+- **Alertas:** `alert_email` es obligatorio y va solo en `terraform.tfvars` (ignorado por git).
+  La política de `ops.tf` avisa por email cuando llega un mensaje a `analysis-jobs-dlq`.
+
 ## 4. Despliegues automáticos posteriores
 
 Terraform crea el trigger `proptech-deploy-main`, la identidad dedicada
