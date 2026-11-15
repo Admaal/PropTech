@@ -237,7 +237,7 @@ Ver [SECURITY.md](SECURITY.md) para reportar vulnerabilidades y buenas práctica
 - **Backend:** Cloud Run — [infra/terraform/README.md](infra/terraform/README.md)
 - **Frontend:** Vercel — [docs/demo-deploy.md](docs/demo-deploy.md)
 
-Script usuarios demo: crear cuentas `demo-a@test.com` / `demo-b@test.com` en Supabase Auth con la misma contraseña que `DEMO_USER_PASSWORD` y ejecutar el seed SQL.
+Script usuarios demo: crear cuentas `demo-a@test.com` / `demo-b@test.com` en Supabase Auth con la misma contraseña que `DEMO_USER_PASSWORD` y ejecutar el seed SQL (`supabase/seed.sql`, idempotente: se puede repetir sin duplicar datos).
 
 ## Funcionalidades MVP
 

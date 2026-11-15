@@ -1,6 +1,9 @@
 -- Seed demo: 2 organizaciones y propiedades en Madrid
 -- NOTA: Los usuarios demo deben crearse vía Auth; este seed asume orgs fijas.
 -- Ejecutar después de crear usuarios demo en Supabase o adaptar user_ids.
+--
+-- Idempotente: se puede ejecutar más de una vez sin duplicar datos. Las organizaciones
+-- usan IDs fijos y las propiedades se comparan por organización, título y dirección.
 
 -- Organizaciones demo (IDs fijos para reproducibilidad)
 INSERT INTO organizations (id, name) VALUES
@@ -11,7 +14,9 @@ ON CONFLICT (id) DO NOTHING;
 -- Propiedades Org A - Inmobiliaria Centro (12)
 -- Criterio simplificado del seed: bajo = alquiler alto; alto = alquiler bajo (~700-900€).
 -- Coincide a menudo con barrios periféricos porque allí el alquiler es más barato.
-INSERT INTO properties (organization_id, title, address, city, price_monthly, sqm, bedrooms, risk_level, latitude, longitude) VALUES
+INSERT INTO properties (organization_id, title, address, city, price_monthly, sqm, bedrooms, risk_level, latitude, longitude)
+SELECT v.organization_id::uuid, v.title, v.address, v.city, v.price_monthly, v.sqm, v.bedrooms, v.risk_level, v.latitude, v.longitude
+FROM (VALUES
   ('11111111-1111-1111-1111-111111111111', 'Piso luminoso en Malasaña', 'Calle Pez 12, 3ºB', 'Madrid', 1200, 65, 2, 'low', 40.4268, -3.7038),
   ('11111111-1111-1111-1111-111111111111', 'Estudio moderno Chueca', 'Calle Hortaleza 45', 'Madrid', 950, 42, 1, 'medium', 40.4220, -3.6975),
   ('11111111-1111-1111-1111-111111111111', 'Ático con terraza', 'Calle Fuencarral 88', 'Madrid', 1850, 95, 3, 'low', 40.4285, -3.7012),
@@ -23,10 +28,17 @@ INSERT INTO properties (organization_id, title, address, city, price_monthly, sq
   ('11111111-1111-1111-1111-111111111111', 'Loft industrial en Argüelles', 'Calle Princesa 72', 'Madrid', 1750, 70, 2, 'low', 40.4290, -3.7150),
   ('11111111-1111-1111-1111-111111111111', 'Piso céntrico Sol', 'Calle Mayor 25, 2ºA', 'Madrid', 1500, 60, 1, 'medium', 40.4168, -3.7038),
   ('11111111-1111-1111-1111-111111111111', 'Apartamento Salamanca', 'Calle Serrano 45', 'Madrid', 2200, 90, 2, 'low', 40.4250, -3.6850),
-  ('11111111-1111-1111-1111-111111111111', 'Piso Vallecas', 'Calle Puerto de Navacerrada 12', 'Madrid', 900, 55, 2, 'high', 40.3900, -3.6550);
+  ('11111111-1111-1111-1111-111111111111', 'Piso Vallecas', 'Calle Puerto de Navacerrada 12', 'Madrid', 900, 55, 2, 'high', 40.3900, -3.6550)
+) AS v(organization_id, title, address, city, price_monthly, sqm, bedrooms, risk_level, latitude, longitude)
+WHERE NOT EXISTS (
+  SELECT 1 FROM properties p
+  WHERE p.organization_id = v.organization_id::uuid AND p.title = v.title AND p.address = v.address
+);
 
 -- Propiedades Org B - Gestión Norte (8)
-INSERT INTO properties (organization_id, title, address, city, price_monthly, sqm, bedrooms, risk_level, latitude, longitude) VALUES
+INSERT INTO properties (organization_id, title, address, city, price_monthly, sqm, bedrooms, risk_level, latitude, longitude)
+SELECT v.organization_id::uuid, v.title, v.address, v.city, v.price_monthly, v.sqm, v.bedrooms, v.risk_level, v.latitude, v.longitude
+FROM (VALUES
   ('22222222-2222-2222-2222-222222222222', 'Piso en Moncloa', 'Calle Hilarión Eslava 5', 'Madrid', 1300, 72, 2, 'low', 40.4350, -3.7180),
   ('22222222-2222-2222-2222-222222222222', 'Estudio Universidad', 'Calle Isaac Peral 22', 'Madrid', 850, 40, 1, 'medium', 40.4380, -3.7200),
   ('22222222-2222-2222-2222-222222222222', 'Piso amplio Cuatro Caminos', 'Calle Orense 34', 'Madrid', 1550, 88, 3, 'low', 40.4450, -3.6950),
@@ -34,4 +46,9 @@ INSERT INTO properties (organization_id, title, address, city, price_monthly, sq
   ('22222222-2222-2222-2222-222222222222', 'Piso económico Carabanchel', 'Calle General Ricardos 90', 'Madrid', 700, 50, 2, 'high', 40.3800, -3.7400),
   ('22222222-2222-2222-2222-222222222222', 'Ático en Nuevos Ministerios', 'Paseo de la Castellana 120', 'Madrid', 2500, 105, 3, 'low', 40.4450, -3.6920),
   ('22222222-2222-2222-2222-222222222222', 'Piso Chamberí norte', 'Calle García de Paredes 28', 'Madrid', 1450, 68, 2, 'medium', 40.4320, -3.6980),
-  ('22222222-2222-2222-2222-222222222222', 'Estudio Malasaña', 'Calle Manuela Malasaña 10', 'Madrid', 1000, 45, 1, 'medium', 40.4270, -3.7050);
+  ('22222222-2222-2222-2222-222222222222', 'Estudio Malasaña', 'Calle Manuela Malasaña 10', 'Madrid', 1000, 45, 1, 'medium', 40.4270, -3.7050)
+) AS v(organization_id, title, address, city, price_monthly, sqm, bedrooms, risk_level, latitude, longitude)
+WHERE NOT EXISTS (
+  SELECT 1 FROM properties p
+  WHERE p.organization_id = v.organization_id::uuid AND p.title = v.title AND p.address = v.address
+);
