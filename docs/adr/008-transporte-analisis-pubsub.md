@@ -66,6 +66,6 @@ Comprobado en producción el 2026-11-15:
   permisos del agente de Pub/Sub sobre la DLQ. La suscripción se restauró idéntica y
   `terraform plan` no mostró cambios.
 - **Alerta:** la política abrió un incidente y el aviso por email llegó al destinatario. La prueba destapó que no se cerraba sola, y un
-  segundo mensaje no habría avisado; se corrigió con `evaluation_missing_data` y `auto_close`.
+  segundo mensaje no habría avisado; se corrigió con `auto_close` a 30 minutos. Un segundo mensaje dentro de los 30 minutos posteriores a un incidente no vuelve a avisar. No se usó `evaluation_missing_data`: exige una duración distinta de cero y la API rechaza el cambio con `duration = "0s"`.
 - **No probado:** una caída real de Supabase. Que `transient` responde `5xx` lo cubre un test
   unitario, pero el fallo real no se ha provocado.
