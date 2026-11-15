@@ -69,5 +69,6 @@ DESIGN.md
 supabase/.temp/
 supabase/.branches/
 
-# Specs y planes locales
-docs/specs/
+# Specs y planes locales (excepto la spec del transporte Pub/Sub, versionada en PR 5)
+docs/specs/*
+!docs/specs/pubsub-analysis.md

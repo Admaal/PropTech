@@ -132,6 +132,8 @@ resource "google_cloud_run_v2_service" "mcp_ai" {
 
   template {
     service_account = google_service_account.mcp_ai_runtime.email
+    # El push de Pub/Sub espera al análisis completo: el timeout debe cubrir Gemini con backoff.
+    timeout = "600s"
 
     containers {
       image = var.mcp_ai_image
