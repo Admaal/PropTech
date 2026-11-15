@@ -295,6 +295,44 @@ resource "google_project_iam_member" "cloud_build_log_writer" {
   member  = "serviceAccount:${google_service_account.cloud_build.email}"
 }
 
+# El repositorio lo crea scripts/gcp-bootstrap.ps1; en un proyecto existente hay que importarlo
+# (ver docs/gcp-setup.md). Cada push a main añade imágenes: la limpieza mantiene el almacenamiento
+# dentro del nivel gratuito.
+resource "google_artifact_registry_repository" "proptech" {
+  project       = var.project_id
+  location      = var.region
+  repository_id = var.artifact_registry_repository
+  format        = "DOCKER"
+  description   = "PropTech portfolio"
+
+  # Sin esto el proveedor solo simula los borrados.
+  cleanup_policy_dry_run = false
+
+  # KEEP gana sobre DELETE: siempre quedan las 5 últimas versiones de cada imagen.
+  cleanup_policies {
+    id     = "keep-recent"
+    action = "KEEP"
+
+    most_recent_versions {
+      keep_count = 5
+    }
+  }
+
+  cleanup_policies {
+    id     = "delete-old"
+    action = "DELETE"
+
+    condition {
+      tag_state  = "ANY"
+      older_than = "604800s"
+    }
+  }
+
+  lifecycle {
+    prevent_destroy = true
+  }
+}
+
 resource "google_artifact_registry_repository_iam_member" "cloud_build_writer" {
   project    = var.project_id
   location   = var.region

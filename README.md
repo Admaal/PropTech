@@ -133,6 +133,7 @@ El login muestra botones de acceso rápido para Demo A y Demo B. El registro no 
 - **Cloud Run sin instancias mínimas** (`min_instance_count = 0`): no hay coste en reposo.
 - **Cuota de análisis:** 3 por organización y día, aplicada en la base de datos.
 - **Tope de Gemini:** 150 peticiones al día por modelo (preferencias de Cloud Quotas en Terraform), que Google aplica rechazando el exceso.
+- **Imágenes de Cloud Run:** una política de limpieza de Artifact Registry conserva las 5 últimas versiones de cada imagen y borra las de más de 7 días, para que el almacenamiento no crezca con cada despliegue.
 - **Alertas:** presupuesto de GCP de 1 €/mes con avisos al 50 % y al 100 %, y una alerta por email si un análisis llega a la DLQ.
 
 ### Checklist antes de publicar

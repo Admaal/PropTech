@@ -124,6 +124,15 @@ terraform apply
 llega a la cola de mensajes fallidos (DLQ). Solo va en `terraform.tfvars`, nunca en el repo.
 Terraform habilita las APIs de Pub/Sub y Cloud Quotas por sí mismo.
 
+El repositorio de imágenes también está en Terraform (con su política de limpieza). Si ya lo
+creó `gcp-bootstrap.ps1`, impórtalo antes del primer `apply` para que Terraform no intente
+crearlo de nuevo:
+
+```bash
+terraform import google_artifact_registry_repository.proptech \
+  projects/TU-PROYECTO/locations/europe-west1/repositories/proptech
+```
+
 Anota el output `server_url` — lo necesitarás para Vercel (`NEXT_PUBLIC_API_URL`).
 
 Tras el primer `apply`, copia la URL real de `mcp-ai` en la variable `mcp_ai_url`
@@ -156,6 +165,9 @@ topología siguen requiriendo `terraform plan` y `terraform apply` manuales.
    rechaza las peticiones que superen el tope, así que ese es el límite que sí corta el gasto
    (ver [ADR-010](adr/010-tope-diario-gemini-cloud-quotas.md)).
 3. Terraform crea una alerta por email cuando llega un mensaje a `analysis-jobs-dlq`.
+4. Una política de limpieza de Artifact Registry conserva las 5 últimas versiones de cada imagen
+   y borra las que tengan más de 7 días y no estén entre ellas, para que cada push a `main` no
+   haga crecer el almacenamiento.
 
 ---
 
