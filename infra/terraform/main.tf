@@ -1,6 +1,13 @@
 terraform {
   required_version = ">= 1.5"
 
+  # Estado remoto con versionado: no depende de la máquina de quien aplica.
+  # El bucket se creó fuera de Terraform (huevo y gallina) y no es público.
+  backend "gcs" {
+    bucket = "gen-lang-client-0665399020-tfstate"
+    prefix = "terraform/state"
+  }
+
   required_providers {
     google = {
       source  = "hashicorp/google"
@@ -12,6 +19,10 @@ terraform {
 provider "google" {
   project = var.project_id
   region  = var.region
+
+  # Las APIs de facturación y presupuesto exigen un proyecto de cuota.
+  user_project_override = true
+  billing_project       = var.project_id
 }
 
 resource "google_service_account" "server_runtime" {

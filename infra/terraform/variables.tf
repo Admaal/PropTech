@@ -76,6 +76,12 @@ variable "billing_account_id" {
   description = "ID de la cuenta de facturación para el presupuesto mensual"
 }
 
+variable "alert_email" {
+  type        = string
+  nullable    = false
+  description = "Email que recibe las alertas de Cloud Monitoring. Se define en terraform.tfvars (ignorado por git)."
+}
+
 variable "mcp_ai_url" {
   type        = string
   default     = "https://proptech-mcp-ai-7fhpow7ara-ew.a.run.app"
