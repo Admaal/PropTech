@@ -123,13 +123,18 @@ El login muestra botones de acceso rápido para Demo A y Demo B. El registro no 
 | API global | 100 peticiones / 15 min por IP |
 | Archivos | Solo PDF válido (`%PDF-`), máx. 10 MB |
 
-**Coste:** la demo tiene un tope objetivo de ~10 €/mes, con alertas de presupuesto en Google AI Studio y GCP Billing (ver checklist). El gasto de IA lo controla el límite diario de análisis por organización.
+**Coste:** el objetivo es 0 €/mes. Un presupuesto de GCP solo avisa, no corta el gasto, así que lo que lo mantiene bajo es la combinación de estos límites:
+
+- **Cloud Run sin instancias mínimas** (`min_instance_count = 0`): no hay coste en reposo.
+- **Cuota de análisis:** 3 por organización y día, aplicada en la base de datos.
+- **Tope de Gemini:** 150 peticiones al día por modelo (preferencias de Cloud Quotas en Terraform), que Google aplica rechazando el exceso.
+- **Alertas:** presupuesto de GCP de 1 €/mes con avisos al 50 % y al 100 %, y una alerta por email si un análisis llega a la DLQ.
 
 ### Checklist antes de publicar
 
 1. Supabase Auth → desactivar sign ups
-2. Google AI Studio → alerta y tope de presupuesto (~10 €/mes)
-3. GCP Billing → alerta de presupuesto en el proyecto
+2. Gemini → tope diario de peticiones por modelo (`gemini_daily_request_cap` en Terraform)
+3. GCP Billing → presupuesto de 1 €/mes con alertas (Terraform)
 4. `DAILY_ANALYSIS_QUOTA=3` en Cloud Run (Terraform)
 
 Guía GCP: **[docs/gcp-setup.md](docs/gcp-setup.md)**  
@@ -251,6 +256,8 @@ Script usuarios demo: crear cuentas `demo-a@test.com` / `demo-b@test.com` en Sup
 - [Despliegue demo (Vercel)](docs/demo-deploy.md)
 - [Datos de demo y privacidad](docs/demo-privacy.md)
 - [Requisitos](docs/requirements.md)
+- [Changelog](docs/changelog.md)
+- [Specs](docs/specs/) y [specs archivadas](docs/specs/archive/README.md)
 - [AGENTS.md](AGENTS.md)
 
 ## Licencia
