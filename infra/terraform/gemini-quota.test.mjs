@@ -18,38 +18,36 @@ assert.match(
 );
 assert.match(quotaTf, /service\s*=\s*"generativelanguage\.googleapis\.com"/);
 
-// Límites diarios por proyecto y modelo, en los tiers que sí tienen tope definido.
-for (const quotaId of [
-  "GenerateRequestsPerDayPerProjectPerModel-FreeTier",
-  "GenerateRequestsPerDayPerProjectPerModel-PaidTier2",
-]) {
-  assert.match(quotaTf, new RegExp(`"${quotaId}"`), `falta el quota_id ${quotaId}`);
+// Pares explícitos (quota_id, modelo). El 6.º par queda fuera a propósito.
+const expectedPairs = [
+  ["GenerateRequestsPerDayPerProjectPerModel-FreeTier", "gemini-3.1-flash-lite"],
+  ["GenerateRequestsPerDayPerProjectPerModel-FreeTier", "gemini-3-flash-preview"],
+  ["GenerateRequestsPerDayPerProjectPerModel-PaidTier2", "gemini-3.1-flash-lite"],
+  ["GenerateRequestsPerDayPerProjectPerModel-PaidTier2", "gemini-3-flash-preview"],
+  ["GenerateRequestsPerDayPerProjectPerModel-PaidTier2", "gemini-2.5-flash-lite"],
+];
+
+for (const [quotaId, model] of expectedPairs) {
+  assert.match(
+    quotaTf,
+    new RegExp(
+      `quota_id\\s*=\\s*"${quotaId}"\\s*,\\s*model\\s*=\\s*"${model.replace(/\./g, "\\.")}"`,
+    ),
+    `falta el par ${quotaId} / ${model}`,
+  );
 }
 
-// Tier 3 queda fuera: su límite es ilimitado y el preference exige email de contacto.
+// Free tier de gemini-2.5-flash-lite no se incluye: su límite por defecto ya es 20 y 150 sería un aumento.
 assert.doesNotMatch(
   quotaTf,
-  /PaidTier3/,
-  "el tier 3 no debe estar en el tope (exige email de contacto)",
+  /quota_id\s*=\s*"GenerateRequestsPerDayPerProjectPerModel-FreeTier"\s*,\s*model\s*=\s*"gemini-2\.5-flash-lite"/,
+  "free tier de gemini-2.5-flash-lite no debe estar en el tope",
 );
 
-for (const model of [
-  "gemini-3.1-flash-lite",
-  "gemini-3-flash-preview",
-  "gemini-2.5-flash-lite",
-]) {
-  assert.match(quotaTf, new RegExp(`"${model}"`), `falta el modelo ${model}`);
-}
+assert.doesNotMatch(quotaTf, /PaidTier3/, "el tier 3 no debe estar en el tope");
 
 assert.match(quotaTf, /preferred_value\s*=\s*var\.gemini_daily_request_cap/);
-assert.match(quotaTf, /dimensions\s*=\s*\{[\s\S]*?model\s*=/);
-
-// Solo se ignora la comprobación de recorte porcentual; la de "por debajo del uso" sigue activa.
-assert.match(
-  quotaTf,
-  /ignore_safety_checks\s*=\s*"QUOTA_DECREASE_PERCENTAGE_TOO_HIGH"/,
-  "debe ignorar solo la comprobación de recorte porcentual",
-);
+assert.match(quotaTf, /ignore_safety_checks\s*=\s*"QUOTA_DECREASE_PERCENTAGE_TOO_HIGH"/);
 
 assert.match(
   variablesTf,
