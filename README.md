@@ -12,6 +12,8 @@ Arquitectura (diagrama y flujo asíncrono de análisis): [docs/architecture.md](
 
 ## Capturas
 
+![Recorrido por la demo: login con acceso rápido, dashboard con mapa, ficha de un inmueble y resultado de un análisis de IA](docs/screenshots/demo.gif)
+
 | Dashboard + mapa | Ficha con fotos e IA | Análisis PDF |
 |------------------|----------------------|--------------|
 | ![Dashboard con mapa y filtros](docs/screenshots/dashboard-mapa.png) | ![Ficha de propiedad](docs/screenshots/propiedad-analisis.png) | ![Resultado del análisis](docs/screenshots/upload-pdf.png) |
