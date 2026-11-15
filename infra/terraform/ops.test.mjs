@@ -20,25 +20,17 @@ assert.match(opsTf, /type\s*=\s*"email"/);
 assert.match(opsTf, /email_address\s*=\s*var\.alert_email/);
 assert.match(opsTf, /notification_channels\s*=\s*\[google_monitoring_notification_channel\.alert_email\.id\]/);
 
-// La métrica solo tiene datos cuando hay un mensaje en la DLQ. Sin esto, el incidente se queda
-// abierto días y un segundo mensaje no generaría un aviso nuevo (comprobado en la prueba de fallo).
-// evaluation_missing_data exige una duración distinta de cero: con "0s" la API de Monitoring rechaza
-// el cambio al aplicar (terraform plan y validate no lo detectan). Se usa solo auto_close.
+// Comprobado en producción: con la configuración por defecto el incidente se abre al llegar un
+// mensaje a la DLQ y se cierra solo (~1 min) al terminar la ventana, por lo que un mensaje posterior
+// debería avisar de nuevo. No hace falta alert_strategy ni evaluation_missing_data (este último, además,
+// exige una duración distinta de cero y la API lo rechaza con "0s").
 const opsCode = opsTf
   .split("\n")
   .filter((line) => !line.trim().startsWith("#"))
   .join("\n");
-assert.doesNotMatch(
-  opsCode,
-  /evaluation_missing_data/,
-  "con duration 0s la API rechaza evaluation_missing_data; el cierre del incidente va con auto_close",
-);
+assert.doesNotMatch(opsCode, /alert_strategy/, "el cierre del incidente por defecto ya es correcto");
+assert.doesNotMatch(opsCode, /evaluation_missing_data/, "la API lo rechaza con duration 0s");
 assert.match(opsTf, /duration\s*=\s*"0s"/, "la duración 0s permite que un mensaje suelto dispare la alerta");
-assert.match(
-  opsTf,
-  /alert_strategy\s*\{[\s\S]*?auto_close\s*=\s*"1800s"/,
-  "el incidente debe cerrarse solo a los 30 minutos",
-);
 
 // El email no se versiona: la variable no tiene valor por defecto y no hay direcciones en el repo.
 const alertEmailBlock = variablesTf.match(/variable\s+"alert_email"\s*\{([^}]*)\}/);
