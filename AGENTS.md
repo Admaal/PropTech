@@ -102,6 +102,8 @@ Before writing code, evaluate in order:
 - Use skeleton loaders for async states.
 - Ensure responsive design by default.
 - Dark mode via `theme-toggle` is supported alongside the light-mode defaults.
+- Before changing UI or CSS, consult Modern Web Guidance (plugin enabled in
+  `.claude/settings.json`; or `npx -y modern-web-guidance@latest search|retrieve`).
 - Avoid premature UI abstraction layers.
 
 ---
