@@ -65,7 +65,7 @@ Comprobado en producción el 2026-11-15:
   `analysis-jobs-dlq` tras 5 entregas en 108 s, conservando su `requestId`. Eso prueba también los
   permisos del agente de Pub/Sub sobre la DLQ. La suscripción se restauró idéntica y
   `terraform plan` no mostró cambios.
-- **Alerta:** la política abrió un incidente. La prueba destapó que no se cerraba sola, y un
+- **Alerta:** la política abrió un incidente y el aviso por email llegó al destinatario. La prueba destapó que no se cerraba sola, y un
   segundo mensaje no habría avisado; se corrigió con `evaluation_missing_data` y `auto_close`.
 - **No probado:** una caída real de Supabase. Que `transient` responde `5xx` lo cubre un test
   unitario, pero el fallo real no se ha provocado.

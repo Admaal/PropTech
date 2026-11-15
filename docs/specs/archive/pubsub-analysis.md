@@ -79,7 +79,7 @@ Verificado el 2026-11-15.
 | AC-09 | Test de configuración: `http` por defecto. |
 | AC-10 | Test de contrato de Terraform y recursos comprobados en GCP. Los permisos de la DLQ quedaron probados por la propia prueba de fallo. La cuenta del server ya no figura entre los invokers de mcp-ai. |
 
-Hallazgo de la prueba: la alerta de DLQ abría un incidente que no se cerraba solo, así que un
+La alerta de DLQ abrió un incidente y el aviso por email llegó al destinatario. Hallazgo de la prueba: el incidente no se cerraba solo, así que un
 segundo mensaje no avisaría. Se corrigió con `evaluation_missing_data` y `auto_close`.
 
 ## Casos límite y errores
