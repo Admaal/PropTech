@@ -98,19 +98,40 @@ predeterminada antes de publicar.
 
 ## Paso 4 — Terraform
 
+El estado de Terraform vive en un bucket de GCS (ver [ADR-009](adr/009-estado-remoto-terraform-gcs.md)).
+Antes del primer `terraform init`, crea el bucket (privado y con versionado) y pon su
+nombre en el bloque `backend "gcs"` de `infra/terraform/main.tf`:
+
+```bash
+gcloud storage buckets create gs://TU-PROYECTO-tfstate --project=TU-PROYECTO \
+  --location=europe-west1 --uniform-bucket-level-access --public-access-prevention
+gcloud storage buckets update gs://TU-PROYECTO-tfstate --versioning
+```
+
 Copia y edita las variables (el archivo real no va al repo):
 
 ```powershell
 cd infra/terraform
 cp terraform.tfvars.example terraform.tfvars
-# Edita project_id, imágenes y cors_origin
+# Edita project_id, imágenes, cors_origin, billing_account_id y alert_email
 
 terraform init
 terraform plan
 terraform apply
 ```
 
+`alert_email` es obligatorio: recibe la alerta de Cloud Monitoring cuando un análisis
+llega a la cola de mensajes fallidos (DLQ). Solo va en `terraform.tfvars`, nunca en el repo.
+Terraform habilita las APIs de Pub/Sub y Cloud Quotas por sí mismo.
+
 Anota el output `server_url` — lo necesitarás para Vercel (`NEXT_PUBLIC_API_URL`).
+
+Tras el primer `apply`, copia la URL real de `mcp-ai` en la variable `mcp_ai_url`
+(`terraform.tfvars`) y vuelve a aplicar: la suscripción de Pub/Sub y la validación
+OIDC de mcp-ai usan esa URL como audiencia, y su valor por defecto corresponde a otro proyecto.
+
+Para ejecutar Terraform desde tu máquina usa `gcloud auth application-default login`, o
+exporta `GOOGLE_OAUTH_ACCESS_TOKEN=$(gcloud auth print-access-token)` para un comando suelto.
 
 Antes del deploy final, actualiza `cors_origin` en `terraform.tfvars` con tu URL de Vercel y vuelve a `terraform apply`.
 
@@ -130,8 +151,11 @@ topología siguen requiriendo `terraform plan` y `terraform apply` manuales.
 
 1. Terraform crea un presupuesto de **1 €/mes** para este proyecto, con alertas al
    50 % y 100 %. El presupuesto avisa, pero no corta automáticamente el consumo.
-2. En **Google AI Studio** → API key, configura un límite y una alerta separados
-   para el uso de Gemini.
+2. Terraform fija un **tope diario de peticiones a Gemini** por modelo y tier
+   (`gemini_daily_request_cap`, 150 por defecto) con preferencias de Cloud Quotas. Google
+   rechaza las peticiones que superen el tope, así que ese es el límite que sí corta el gasto
+   (ver [ADR-010](adr/010-tope-diario-gemini-cloud-quotas.md)).
+3. Terraform crea una alerta por email cuando llega un mensaje a `analysis-jobs-dlq`.
 
 ---
 
@@ -158,4 +182,7 @@ Guía completa: [demo-deploy.md](demo-deploy.md)
 | `docker` no reconocido | Instala Docker Desktop |
 | Billing not enabled | Activa facturación en el proyecto GCP |
 | 403 al push de imagen | Ejecuta `gcloud auth configure-docker europe-west1-docker.pkg.dev` |
+| `terraform init` no encuentra el bucket | Crea el bucket de estado (Paso 4) y revisa el nombre en `backend "gcs"` |
+| 403 "requires a quota project" en `terraform plan` | El provider debe llevar `user_project_override` y `billing_project` (ya configurados en `main.tf`) |
+| El push de Pub/Sub responde 401 | Revisa que `mcp_ai_url` coincide con la URL real de mcp-ai y que `PUBSUB_PUSH_AUDIENCE` es `<mcp_ai_url>/pubsub/analyze` |
 | CORS en el navegador | `cors_origin` en terraform debe ser la URL exacta de Vercel |

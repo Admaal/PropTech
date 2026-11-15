@@ -91,5 +91,25 @@ Decisiones arquitectónicas formales (contexto, decisión, alternativas y consec
 - [ADR-005](adr/005-recuperacion-de-jobs-ia-con-leases.md): Recuperación de jobs IA con claim y leases
 - [ADR-006](adr/006-permisos-destructivos-para-admins.md): Operaciones destructivas reservadas a admins
 - [ADR-007](adr/007-layered-over-hexagonal.md): Capas ligeras en lugar de hexagonal completa
+- [ADR-008](adr/008-transporte-analisis-pubsub.md): Transporte de análisis por Pub/Sub con DLQ
+- [ADR-009](adr/009-estado-remoto-terraform-gcs.md): Estado de Terraform en un bucket remoto de GCS
+- [ADR-010](adr/010-tope-diario-gemini-cloud-quotas.md): Tope diario de peticiones a Gemini con Cloud Quotas
 
 Resumen con trade-offs en el [README](../README.md#decisiones-y-trade-offs).
+
+## Límites conocidos
+
+Decisiones de alcance tomadas a propósito, para que no se confundan con olvidos:
+
+- **Sin métricas propias ni trazas distribuidas.** No hay `/metrics` ni OpenTelemetry. La
+  observabilidad se apoya en los logs JSON con `requestId` del análisis y en las métricas que
+  Cloud Run ya ofrece. Añadir una dependencia de telemetría no se justifica a esta escala.
+- **Sin badge de cobertura.** La cobertura no se mide en el CI; un badge sin medición sería
+  engañoso. El README solo muestra el estado del CI.
+- **Logs de texto fuera del análisis.** El `requestId` se correlaciona entre el server y mcp-ai
+  en el flujo de análisis. El resto de los logs del server siguen siendo texto.
+- **Tope de Gemini por modelo.** Con el fallback entre tres modelos, el máximo teórico es de
+  150 × 3 peticiones al día ([ADR-010](adr/010-tope-diario-gemini-cloud-quotas.md)).
+- **El CI no aplica Terraform.** El CI valida la infraestructura; el `apply` se hace a mano.
+- **El e2e del CI usa subidas simuladas.** No sube PDFs reales: no gasta cuota ni llama a Gemini.
+- **Caídas reales de Supabase sin provocar.** Los reintentos y la DLQ se verificaron inyectando un fallo de entrega; la correspondencia `transient` → `5xx` la cubre un test unitario.

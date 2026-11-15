@@ -1,6 +1,6 @@
 ---
 id: "pubsub-analysis"
-status: draft
+status: implemented
 confirmed: true
 ---
 
@@ -41,29 +41,46 @@ completar**.
 
 ## Criterios de aceptación (EARS)
 
-- [ ] **AC-01:** WHEN el server acepta un upload THE system SHALL publicar el `AnalyzeJob`
+- [x] **AC-01:** WHEN el server acepta un upload THE system SHALL publicar el `AnalyzeJob`
   en el topic `analysis-jobs` con el atributo `requestId` antes de responder `202`.
-- [ ] **AC-02:** IF la publicación falla THEN THE system SHALL marcar el análisis como
+- [x] **AC-02:** IF la publicación falla THEN THE system SHALL marcar el análisis como
   `failed` con el mensaje de encolado, como hoy en `markEnqueueFailed`.
-- [ ] **AC-03:** WHEN mcp-ai recibe un push en `/pubsub/analyze` THE system SHALL verificar
+- [x] **AC-03:** WHEN mcp-ai recibe un push en `/pubsub/analyze` THE system SHALL verificar
   el token OIDC (audiencia y cuenta de servicio de la suscripción) y responder `401` sin
   procesar si no es válido.
-- [ ] **AC-04:** WHEN el push es válido THE system SHALL procesar el análisis dentro de la
+- [x] **AC-04:** WHEN el push es válido THE system SHALL procesar el análisis dentro de la
   petición y responder `2xx` solo cuando el análisis termine en `completed` o `failed`.
-- [ ] **AC-05:** IF el análisis ya está `completed` o tiene un lease vigente de otro worker
+- [x] **AC-05:** IF el análisis ya está `completed` o tiene un lease vigente de otro worker
   THEN THE system SHALL responder `2xx` sin llamar a Gemini.
-- [ ] **AC-06:** IF el fallo es de infraestructura (Supabase o red no disponibles) THEN THE
+- [x] **AC-06:** IF el fallo es de infraestructura (Supabase o red no disponibles) THEN THE
   system SHALL responder `5xx` para que Pub/Sub reintente.
-- [ ] **AC-07:** IF el fallo es de negocio (cuota 429, modelo no disponible, respuesta
+- [x] **AC-07:** IF el fallo es de negocio (cuota 429, modelo no disponible, respuesta
   inválida) THEN THE system SHALL aplicar la política de ADR 005 y responder `2xx`, sin
   reintento de Pub/Sub.
-- [ ] **AC-08:** IF el payload no cumple `AnalyzeJobSchema` THEN THE system SHALL responder
+- [x] **AC-08:** IF el payload no cumple `AnalyzeJobSchema` THEN THE system SHALL responder
   `2xx`, registrar el error sin datos del documento y no reintentar.
-- [ ] **AC-09:** WHERE `ANALYSIS_TRANSPORT=http` THE system SHALL mantener el envío HTTP
+- [x] **AC-09:** WHERE `ANALYSIS_TRANSPORT=http` THE system SHALL mantener el envío HTTP
   actual sin cambios de comportamiento.
-- [ ] **AC-10:** THE infrastructure SHALL crear el topic `analysis-jobs`, el topic
+- [x] **AC-10:** THE infrastructure SHALL crear el topic `analysis-jobs`, el topic
   `analysis-jobs-dlq`, la suscripción push con OIDC y `max_delivery_attempts` configurado, y
   SHALL conceder `roles/pubsub.publisher` solo a la cuenta del server.
+
+## Evidencia de verificación
+
+Verificado el 2026-11-15.
+
+| Criterio | Cómo se comprobó |
+|----------|------------------|
+| AC-01, AC-02 | Tests de `pubsub.client` y `mcp.client`. En producción: una subida con `X-Request-ID` propio devolvió `202` y el análisis terminó en `completed`. |
+| AC-03 | Tests de `makePushAuthorizer`. En local, el push sin autorización y con un token falso responde `401`. |
+| AC-04, AC-05 | Tests del handler y de `runAnalysis`. En producción, los logs de mcp-ai muestran el `POST 204` del push tras completar el análisis. |
+| AC-06 | Test unitario (`transient` responde `5xx`). **No se ha provocado una caída real de Supabase.** La mecánica de reintento y DLQ se verificó inyectando un fallo de entrega: con el endpoint de la suscripción apuntando a una ruta inexistente, un mensaje llegó a la DLQ tras 5 entregas en 108 s. |
+| AC-07, AC-08 | Tests del handler y de `runAnalysis`. |
+| AC-09 | Test de configuración: `http` por defecto. |
+| AC-10 | Test de contrato de Terraform y recursos comprobados en GCP. Los permisos de la DLQ quedaron probados por la propia prueba de fallo. La cuenta del server ya no figura entre los invokers de mcp-ai. |
+
+La alerta de DLQ abrió un incidente y el aviso por email llegó al destinatario. Hallazgo de la prueba: el incidente no se cerraba solo, así que un
+segundo mensaje no avisaría. Se corrigió con `evaluation_missing_data` y `auto_close`.
 
 ## Casos límite y errores
 
