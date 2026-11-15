@@ -1,5 +1,5 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
-import type { GenerateContentResult } from "@google/generative-ai";
+import { GoogleGenAI } from "@google/genai";
+import type { GenerateContentResponse } from "@google/genai";
 import type { AnalyzeJob } from "@proptech/shared";
 import { z, ZodError } from "zod";
 import { createServiceClient } from "./lib/supabase.js";
@@ -50,12 +50,11 @@ Criterios: low = ingresos estables y suficientes; medium = dudas o datos incompl
 Si el documento no es legible, risk_level "high" y explica en anomalies.`;
 }
 
-// Ver modelos vigentes: node scripts/list-gemini-models.mjs
-const DEFAULT_MODELS = [
-  "gemini-3.1-flash-lite",
-  "gemini-3-flash-preview",
-  "gemini-2.5-flash-lite",
-];
+// Modelos y clave llegan validados desde parseMcpConfig (runtime-config.ts).
+export interface GeminiSettings {
+  apiKey: string;
+  models: string[];
+}
 
 const RecoverableAnalysisRowsSchema = z.array(
   z.object({
@@ -70,15 +69,9 @@ const RecoverableAnalysisRowsSchema = z.array(
   }),
 );
 
-export function resolveGeminiModels(): string[] {
-  const fromEnv = process.env.GEMINI_MODEL?.trim();
-  if (fromEnv) {
-    return fromEnv.split(",").map((m) => m.trim()).filter(Boolean);
-  }
-  return DEFAULT_MODELS;
-}
-
-export async function reconcileAnalysisJobs(): Promise<void> {
+export async function reconcileAnalysisJobs(
+  gemini: GeminiSettings,
+): Promise<void> {
   const supabase = createServiceClient();
   const { data, error } = await supabase
     .from("document_analyses")
@@ -106,21 +99,32 @@ export async function reconcileAnalysisJobs(): Promise<void> {
       : row.documents;
     if (!document) continue;
 
-    void runAnalysis({
-      analysisId: row.id,
-      documentId: row.document_id,
-      organizationId: row.organization_id,
-      storagePath: document.storage_path,
-    }, newRequestId());
+    void runAnalysis(
+      {
+        analysisId: row.id,
+        documentId: row.document_id,
+        organizationId: row.organization_id,
+        storagePath: document.storage_path,
+      },
+      newRequestId(),
+      gemini,
+    );
   }
 }
 
+function errorStatus(err: unknown): number | undefined {
+  const status = (err as { status?: unknown } | null)?.status;
+  return typeof status === "number" ? status : undefined;
+}
+
 function isQuotaError(err: unknown): boolean {
+  if (errorStatus(err) === 429) return true;
   const msg = err instanceof Error ? err.message : String(err);
   return msg.includes("429") || msg.toLowerCase().includes("quota");
 }
 
 function isModelUnavailableError(err: unknown): boolean {
+  if (errorStatus(err) === 404) return true;
   const msg = err instanceof Error ? err.message : String(err);
   return (
     msg.includes("404") ||
@@ -131,7 +135,7 @@ function isModelUnavailableError(err: unknown): boolean {
 
 function parseRetrySeconds(err: unknown): number {
   const msg = err instanceof Error ? err.message : String(err);
-  const match = msg.match(/retry in (\d+(?:\.\d+)?)s/i);
+  const match = msg.match(/retry(?: in |Delay"?\s*:\s*")(\d+(?:\.\d+)?)s/i);
   return match ? Math.ceil(Number(match[1])) + 1 : 50;
 }
 
@@ -167,33 +171,31 @@ async function sleep(seconds: number): Promise<void> {
 }
 
 async function generateWithModels(
-  apiKey: string,
+  { apiKey, models }: GeminiSettings,
   base64: string,
   ctx: LogFields,
-): Promise<GenerateContentResult> {
-  const genAI = new GoogleGenerativeAI(apiKey);
-  const models = resolveGeminiModels();
+): Promise<GenerateContentResponse> {
+  const ai = new GoogleGenAI({ apiKey });
   let lastError: Error | null = null;
 
   for (const modelName of models) {
     try {
-      const model = genAI.getGenerativeModel({
+      return await ai.models.generateContent({
         model: modelName,
-        generationConfig: {
+        contents: [
+          { text: buildSystemPrompt() },
+          {
+            inlineData: {
+              mimeType: "application/pdf",
+              data: base64,
+            },
+          },
+        ],
+        config: {
           responseMimeType: "application/json",
           temperature: 0.2,
         },
       });
-
-      return await model.generateContent([
-        { text: buildSystemPrompt() },
-        {
-          inlineData: {
-            mimeType: "application/pdf",
-            data: base64,
-          },
-        },
-      ]);
     } catch (err) {
       lastError = err instanceof Error ? err : new Error(String(err));
       logEvent("warn", "modelo falló", { ...ctx, model: modelName });
@@ -225,6 +227,7 @@ async function generateWithModels(
 export async function runAnalysis(
   job: AnalyzeJob,
   requestId: string,
+  gemini: GeminiSettings,
 ): Promise<AnalysisOutcome> {
   const ctx: LogFields = {
     service: "mcp-ai",
@@ -246,19 +249,8 @@ export async function runAnalysis(
 
   const startedAt = Date.now();
   const stopHeartbeat = startLeaseHeartbeat(supabase, claimed.analysisId);
-  const apiKey = process.env.GEMINI_API_KEY;
 
   try {
-    if (!apiKey) {
-      await markAnalysisFailed(
-        supabase,
-        claimed.analysisId,
-        "GEMINI_API_KEY no configurada",
-        claimed.attemptCount,
-      );
-      return "failed";
-    }
-
     const { data: fileData, error: downloadError } = await supabase.storage
       .from("documents")
       .download(claimed.storagePath);
@@ -272,13 +264,13 @@ export async function runAnalysis(
     const buffer = Buffer.from(await fileData.arrayBuffer());
     const base64 = buffer.toString("base64");
 
-    const result = await generateWithModels(apiKey, base64, ctx);
+    const result = await generateWithModels(gemini, base64, ctx);
 
-    const rawText = result.response.text();
+    const rawText = result.text ?? "";
     const parsed = parseGeminiAnalysisJson(rawText);
     const durationMs = Date.now() - startedAt;
     const tokensUsed =
-      result.response.usageMetadata?.totalTokenCount ?? null;
+      result.usageMetadata?.totalTokenCount ?? null;
 
     const { data: updatedAnalysis, error: updateError } = await supabase
       .from("document_analyses")

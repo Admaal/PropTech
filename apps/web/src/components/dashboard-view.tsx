@@ -116,7 +116,7 @@ export function DashboardView({
             {filterByMap ? " en la zona del mapa" : ""}
           </p>
           {error ? (
-            <div className="rounded-lg border border-red-300 bg-red-50 p-6 text-sm text-red-800">
+            <div className="rounded-lg border border-destructive-line bg-destructive-soft p-6 text-sm text-destructive-ink">
               {error}
             </div>
           ) : loading ? (

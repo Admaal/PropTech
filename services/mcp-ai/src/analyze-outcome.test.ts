@@ -6,7 +6,13 @@ const { claim, markFailed } = vi.hoisted(() => ({
 }));
 
 vi.mock("./lib/supabase.js", () => ({
-  createServiceClient: () => ({}),
+  createServiceClient: () => ({
+    storage: {
+      from: () => ({
+        download: async () => ({ data: null, error: { message: "sin datos" } }),
+      }),
+    },
+  }),
 }));
 
 vi.mock("./job-recovery.js", () => ({
@@ -25,34 +31,34 @@ const job = {
 };
 
 const claimed = { ...job, attemptCount: 1 };
+const gemini = { apiKey: "test-key", models: ["gemini-test"] };
 
 describe("runAnalysis — resultado para el transporte (AC-04..AC-07)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    delete process.env.GEMINI_API_KEY;
   });
 
   it("si el job no se puede reclamar (ya resuelto o con lease vigente) devuelve skipped (AC-05)", async () => {
     claim.mockResolvedValue(null);
-    expect(await runAnalysis(job, "req-1")).toBe("skipped");
+    expect(await runAnalysis(job, "req-1", gemini)).toBe("skipped");
     expect(markFailed).not.toHaveBeenCalled();
   });
 
   it("si Supabase no responde al reclamar devuelve transient (AC-06)", async () => {
     claim.mockRejectedValue(new Error("supabase caído"));
-    expect(await runAnalysis(job, "req-1")).toBe("transient");
+    expect(await runAnalysis(job, "req-1", gemini)).toBe("transient");
   });
 
   it("si el análisis falla por negocio lo marca como failed y devuelve failed (AC-07)", async () => {
     claim.mockResolvedValue(claimed);
     markFailed.mockResolvedValue(undefined);
-    expect(await runAnalysis(job, "req-1")).toBe("failed");
+    expect(await runAnalysis(job, "req-1", gemini)).toBe("failed");
     expect(markFailed).toHaveBeenCalled();
   });
 
   it("si además no se puede marcar como failed (infraestructura) devuelve transient (AC-06)", async () => {
     claim.mockResolvedValue(claimed);
     markFailed.mockRejectedValue(new Error("supabase caído"));
-    expect(await runAnalysis(job, "req-1")).toBe("transient");
+    expect(await runAnalysis(job, "req-1", gemini)).toBe("transient");
   });
 });

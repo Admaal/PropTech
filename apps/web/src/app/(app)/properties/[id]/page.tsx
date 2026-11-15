@@ -6,6 +6,7 @@ import { PropertyDocumentsSection } from "@/components/property-documents-sectio
 import { PropertyLocationMap } from "@/components/property-location-map-loader";
 import { PropertyImageCarousel } from "@/components/property-image-carousel";
 import { LatestAnalysisBadge } from "@/components/latest-analysis-badge";
+import { formatMonthlyPrice } from "@/lib/format";
 
 interface PropertyPageProps {
   params: Promise<{ id: string }>;
@@ -72,8 +73,8 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
           <dl className="grid grid-cols-2 gap-4 text-sm">
             <div>
               <dt className="text-muted-foreground">Precio</dt>
-              <dd className="font-medium">
-                {property.price_monthly.toLocaleString("es-ES")} €/mes
+              <dd className="font-medium whitespace-nowrap">
+                {formatMonthlyPrice(property.price_monthly)}
               </dd>
             </div>
             <div>

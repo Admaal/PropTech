@@ -252,7 +252,7 @@ export function AdminPanel() {
                   type="button"
                   disabled={busy === p.id}
                   onClick={() => void deleteProperty(p.id)}
-                  className="shrink-0 rounded-lg border border-red-300 px-3 py-1.5 text-xs text-red-700 hover:bg-red-50 dark:border-red-800 dark:text-red-300 dark:hover:bg-red-950/40"
+                  className="shrink-0 rounded-lg border border-destructive-line px-3 py-1.5 text-xs text-destructive-ink hover:bg-destructive-soft"
                 >
                   Eliminar
                 </button>
@@ -283,7 +283,7 @@ export function AdminPanel() {
                   type="button"
                   disabled={busy === a.id}
                   onClick={() => void deleteAnalysis(a)}
-                  className="shrink-0 rounded-lg border border-red-300 px-3 py-1.5 text-xs text-red-700 hover:bg-red-50 dark:border-red-800 dark:text-red-300 dark:hover:bg-red-950/40"
+                  className="shrink-0 rounded-lg border border-destructive-line px-3 py-1.5 text-xs text-destructive-ink hover:bg-destructive-soft"
                 >
                   Eliminar
                 </button>

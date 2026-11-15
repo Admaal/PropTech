@@ -49,7 +49,9 @@ export function PropertyAnalysesHistory({
 }: PropertyAnalysesHistoryProps) {
   const [analyses, setAnalyses] =
     useState<DocumentAnalysisWithFilename[]>(initialAnalyses);
-  const [manualExpandedId, setManualExpandedId] = useState<string | null>(null);
+  const [manualExpandedId, setManualExpandedId] = useState<string | null>(
+    initialAnalyses[0]?.id ?? null,
+  );
   const [loading, setLoading] = useState(false);
   const notifiedRef = useRef<string | null>(null);
 

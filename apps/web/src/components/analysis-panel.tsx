@@ -14,9 +14,9 @@ const riskLabels: Record<RiskLevel, string> = {
 };
 
 const riskBarColors: Record<RiskLevel, string> = {
-  low: "bg-green-500",
-  medium: "bg-amber-500",
-  high: "bg-red-500",
+  low: "bg-success",
+  medium: "bg-warning",
+  high: "bg-destructive",
 };
 
 const riskBadgeColors = riskBadgeClasses;

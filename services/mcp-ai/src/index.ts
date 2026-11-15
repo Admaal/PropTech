@@ -4,7 +4,6 @@ import { AnalyzeJobSchema } from "@proptech/shared";
 import { ZodError } from "zod";
 import {
   reconcileAnalysisJobs,
-  resolveGeminiModels,
   runAnalysis,
 } from "./analyze.js";
 import { parseMcpConfig } from "./runtime-config.js";
@@ -12,9 +11,14 @@ import { logEvent } from "./logger.js";
 import { resolveRequestId } from "./request-id.js";
 import { OAuth2Client } from "google-auth-library";
 import { handlePubsubPush, makePushAuthorizer } from "./pubsub-push.js";
+import { isValidInternalKey } from "./internal-auth.js";
 
 const runtimeConfig = parseMcpConfig(process.env);
 const { internalServiceKey: internalKey } = runtimeConfig;
+const gemini = {
+  apiKey: runtimeConfig.geminiApiKey,
+  models: runtimeConfig.geminiModels,
+};
 
 const app = express();
 const port = runtimeConfig.port;
@@ -47,15 +51,14 @@ app.post("/pubsub/analyze", async (req, res) => {
     { authorization: req.header("authorization"), body: req.body },
     {
       authorize: authorizePush,
-      processJob: (job, requestId) => runAnalysis(job, requestId),
+      processJob: (job, requestId) => runAnalysis(job, requestId, gemini),
     },
   );
   res.status(result.status).end();
 });
 
 function verifyInternal(req: express.Request, res: express.Response): boolean {
-  const key = req.headers["x-internal-key"];
-  if (key !== internalKey) {
+  if (!isValidInternalKey(req.headers["x-internal-key"], internalKey)) {
     res.status(401).json({
       error: { code: "UNAUTHORIZED", message: "No autorizado" },
     });
@@ -71,7 +74,7 @@ app.post("/analyze", (req, res) => {
     const job = AnalyzeJobSchema.parse(req.body);
     const requestId = resolveRequestId(req.header("x-request-id"));
     res.status(202).json({ accepted: true, analysisId: job.analysisId });
-    void runAnalysis(job, requestId).catch(() => {
+    void runAnalysis(job, requestId, gemini).catch(() => {
       logEvent("error", "fallo inesperado del job", {
         service: "mcp-ai",
         requestId,
@@ -98,7 +101,7 @@ app.post("/analyze", (req, res) => {
 });
 
 function scheduleRecovery(): void {
-  void reconcileAnalysisJobs().catch(() => {
+  void reconcileAnalysisJobs(gemini).catch(() => {
     console.error("[mcp-ai] Falló la reconciliación de jobs");
   });
 }
@@ -109,5 +112,5 @@ scheduleRecovery();
 
 app.listen(port, "0.0.0.0", () => {
   console.log(`MCP-AI escuchando en el puerto ${port}`);
-  console.log(`Modelos Gemini: ${resolveGeminiModels().join(", ")}`);
+  console.log(`Modelos Gemini: ${gemini.models.join(", ")}`);
 });

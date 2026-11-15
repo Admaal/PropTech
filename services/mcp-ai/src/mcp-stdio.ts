@@ -4,6 +4,10 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { z } from "zod";
 import { runAnalysis } from "./analyze.js";
 import { newRequestId } from "./request-id.js";
+import { parseMcpConfig } from "./runtime-config.js";
+
+const config = parseMcpConfig(process.env);
+const gemini = { apiKey: config.geminiApiKey, models: config.geminiModels };
 
 const server = new McpServer({
   name: "proptech-mcp-ai",
@@ -20,7 +24,7 @@ server.tool(
     organizationId: z.guid(),
   },
   async (job) => {
-    await runAnalysis(job, newRequestId());
+    await runAnalysis(job, newRequestId(), gemini);
     return {
       content: [
         {
