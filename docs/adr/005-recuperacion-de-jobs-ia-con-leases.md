@@ -25,7 +25,10 @@ mismo análisis. Una cola gestionada no forma parte del alcance de este portfoli
 - **Permitir que cada entrega llame directamente a Gemini:** rechazada porque
   duplica llamadas y coste.
 - **Introducir Pub/Sub, Redis o una cola externa:** descartada hasta que el volumen
-  justifique la infraestructura.
+  justifique la infraestructura. *Actualización:* el transporte del análisis pasó a
+  Pub/Sub con DLQ (ver [ADR-008](008-transporte-analisis-pubsub.md)). Los claims y
+  leases de este ADR siguen vigentes: gestionan los fallos de negocio y las entregas
+  duplicadas.
 
 ## Consecuencias
 
