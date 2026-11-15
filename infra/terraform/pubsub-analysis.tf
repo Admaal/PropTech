@@ -32,11 +32,11 @@ resource "google_pubsub_subscription" "analysis_push" {
   ack_deadline_seconds = 600
 
   push_config {
-    push_endpoint = "${google_cloud_run_v2_service.mcp_ai.uri}/pubsub/analyze"
+    push_endpoint = "${var.mcp_ai_url}/pubsub/analyze"
 
     oidc_token {
       service_account_email = google_service_account.analysis_push.email
-      audience              = "${google_cloud_run_v2_service.mcp_ai.uri}/pubsub/analyze"
+      audience              = "${var.mcp_ai_url}/pubsub/analyze"
     }
   }
 
