@@ -22,11 +22,18 @@ assert.match(opsTf, /notification_channels\s*=\s*\[google_monitoring_notificatio
 
 // La métrica solo tiene datos cuando hay un mensaje en la DLQ. Sin esto, el incidente se queda
 // abierto días y un segundo mensaje no generaría un aviso nuevo (comprobado en la prueba de fallo).
-assert.match(
-  opsTf,
-  /evaluation_missing_data\s*=\s*"EVALUATION_MISSING_DATA_INACTIVE"/,
-  "los datos ausentes deben tratarse como inactivos para que el incidente se cierre",
+// evaluation_missing_data exige una duración distinta de cero: con "0s" la API de Monitoring rechaza
+// el cambio al aplicar (terraform plan y validate no lo detectan). Se usa solo auto_close.
+const opsCode = opsTf
+  .split("\n")
+  .filter((line) => !line.trim().startsWith("#"))
+  .join("\n");
+assert.doesNotMatch(
+  opsCode,
+  /evaluation_missing_data/,
+  "con duration 0s la API rechaza evaluation_missing_data; el cierre del incidente va con auto_close",
 );
+assert.match(opsTf, /duration\s*=\s*"0s"/, "la duración 0s permite que un mensaje suelto dispare la alerta");
 assert.match(
   opsTf,
   /alert_strategy\s*\{[\s\S]*?auto_close\s*=\s*"1800s"/,
