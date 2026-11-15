@@ -7,7 +7,7 @@
     "lint": "pnpm run -r lint",
     "typecheck": "pnpm run -r typecheck",
     "test": "pnpm run -r test",
-    "test:contracts": "node --test infra/*.test.mjs infra/terraform/*.test.mjs",
+    "test:contracts": "node --test infra/*.test.mjs infra/terraform/*.test.mjs supabase/*.test.mjs",
     "scan:secrets": "node scripts/scan-secrets.mjs",
     "check:docs": "node scripts/check-doc-links.mjs",
     "test:e2e": "playwright test --grep-invert @full-stack",
