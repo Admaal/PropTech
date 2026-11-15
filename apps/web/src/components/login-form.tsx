@@ -122,12 +122,12 @@ export function LoginForm({ demoEnabled, apiReady = true }: LoginFormProps) {
           ))}
         </div>
         {!demoEnabled && (
-          <p className="text-xs text-amber-700 dark:text-amber-300">
+          <p className="text-xs text-warning-ink">
             Configura DEMO_USER_PASSWORD en el servidor (no uses NEXT_PUBLIC_*)
           </p>
         )}
         {error && (
-          <p className="rounded-lg border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-800 dark:border-red-800 dark:bg-red-950/40 dark:text-red-200">
+          <p className="rounded-lg border border-destructive-line bg-destructive-soft px-4 py-3 text-sm text-destructive-ink">
             {error}
           </p>
         )}
@@ -139,7 +139,7 @@ export function LoginForm({ demoEnabled, apiReady = true }: LoginFormProps) {
         </summary>
         <form onSubmit={handleSubmit} className="mt-4 space-y-4">
           {error && (
-            <p className="rounded-lg border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-800 dark:border-red-800 dark:bg-red-950/40 dark:text-red-200">
+            <p className="rounded-lg border border-destructive-line bg-destructive-soft px-4 py-3 text-sm text-destructive-ink">
               {error}
             </p>
           )}
@@ -166,6 +166,7 @@ export function LoginForm({ demoEnabled, apiReady = true }: LoginFormProps) {
             <input
               id="password"
               type="password"
+              autoComplete="current-password"
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}

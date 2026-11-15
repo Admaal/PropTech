@@ -15,7 +15,7 @@ export function DemoWarmupBanner({ phase, onRetry }: DemoWarmupBannerProps) {
   if (phase === "offline") {
     return (
       <div
-        className="mb-6 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200"
+        className="mb-6 rounded-lg border border-warning-line bg-warning-soft px-4 py-3 text-sm text-warning-ink"
         role="status"
       >
         <p className="font-medium">La demo no está disponible en este momento</p>

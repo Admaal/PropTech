@@ -13,6 +13,7 @@ import {
 } from "react-leaflet";
 import L from "leaflet";
 import type { PropertyListItem } from "@proptech/shared";
+import { formatMonthlyPrice } from "@/lib/format";
 import { PriceLegend } from "@/components/price-legend";
 import { getPriceTier, priceTierMarkerColor } from "@/lib/price-tier";
 import { isUnsplashImageUrl, optimizeImageUrl } from "@/lib/optimize-image-url";
@@ -30,6 +31,18 @@ function priceIcon(priceMonthly: number): L.DivIcon {
     iconSize: [14, 14],
     iconAnchor: [7, 7],
   });
+}
+
+// La rueda solo hace zoom tras activar el mapa (clic); si no, hace scroll de la página.
+function WheelZoomOnFocus() {
+  const map = useMap();
+
+  useMapEvents({
+    click: () => map.scrollWheelZoom.enable(),
+    mouseout: () => map.scrollWheelZoom.disable(),
+  });
+
+  return null;
 }
 
 function MapBoundsListener({
@@ -101,12 +114,13 @@ export function PropertyMap({
           center={MADRID_CENTER}
           zoom={DEFAULT_ZOOM}
           className="h-90 w-full z-0"
-          scrollWheelZoom
+          scrollWheelZoom={false}
         >
           <TileLayer
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
             url={OSM_TILES}
           />
+          <WheelZoomOnFocus />
           <MapBoundsListener
             onBoundsChange={onBoundsChange}
             enabled={filterByMap}
@@ -147,7 +161,7 @@ export function PropertyMap({
                     </p>
                   )}
                   <p className="mt-2 font-medium">
-                    {property.price_monthly.toLocaleString("es-ES")} €/mes
+                    {formatMonthlyPrice(property.price_monthly)}
                   </p>
                   <Link
                     href={`/properties/${property.id}`}
