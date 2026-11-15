@@ -76,6 +76,12 @@ variable "billing_account_id" {
   description = "ID de la cuenta de facturación para el presupuesto mensual"
 }
 
+variable "gemini_daily_request_cap" {
+  type        = number
+  default     = 150
+  description = "Tope diario de peticiones a Gemini por modelo y por tier (override de cuota)"
+}
+
 variable "github_owner" {
   type        = string
   default     = "Admaal"
