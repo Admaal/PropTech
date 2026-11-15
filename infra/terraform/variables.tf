@@ -76,6 +76,12 @@ variable "billing_account_id" {
   description = "ID de la cuenta de facturación para el presupuesto mensual"
 }
 
+variable "analysis_topic" {
+  type        = string
+  default     = "analysis-jobs"
+  description = "Topic de Pub/Sub donde el server publica los análisis (la DLQ es analysis-jobs-dlq)"
+}
+
 variable "gemini_daily_request_cap" {
   type        = number
   default     = 150

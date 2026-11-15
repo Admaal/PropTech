@@ -1,6 +1,7 @@
 import type { AnalyzeJob } from "@proptech/shared";
 import { createUserClient } from "../lib/supabase.js";
 import { serverConfig } from "../lib/config.js";
+import { publishAnalysisJob } from "./pubsub.client.js";
 
 async function getCloudRunIdToken(audience: string): Promise<string | undefined> {
   if (!audience.includes(".run.app")) {
@@ -42,11 +43,26 @@ async function markEnqueueFailed(
   }
 }
 
-export function dispatchAnalysisJob(
+// Pub/Sub: espera a la publicación para que el 202 salga cuando el job ya está en la cola.
+// HTTP (por defecto): envío en segundo plano, como antes.
+export async function dispatchAnalysisJob(
   job: AnalyzeJob,
   accessToken: string,
   requestId: string,
-): void {
+): Promise<void> {
+  if (serverConfig.analysisTransport === "pubsub") {
+    try {
+      await publishAnalysisJob(job, requestId);
+    } catch {
+      console.error(`[mcp] Encolado en Pub/Sub falló — análisis ${job.analysisId}`);
+      await markEnqueueFailed(
+        job.analysisId,
+        "Error al publicar el análisis en la cola",
+        accessToken,
+      );
+    }
+    return;
+  }
   void dispatchAnalysisJobAsync(job, accessToken, requestId);
 }
 

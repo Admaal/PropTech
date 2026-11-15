@@ -11,6 +11,7 @@ import {
 import { parseGeminiAnalysisJson } from "./parse-analysis-response.js";
 import { logEvent, type LogFields } from "./logger.js";
 import { newRequestId } from "./request-id.js";
+import type { AnalysisOutcome } from "./pubsub-push.js";
 
 function buildSystemPrompt(): string {
   const now = new Date();
@@ -224,7 +225,7 @@ async function generateWithModels(
 export async function runAnalysis(
   job: AnalyzeJob,
   requestId: string,
-): Promise<void> {
+): Promise<AnalysisOutcome> {
   const ctx: LogFields = {
     service: "mcp-ai",
     requestId,
@@ -236,10 +237,10 @@ export async function runAnalysis(
     claimed = await claimAnalysisJob(supabase, job.analysisId);
   } catch {
     logEvent("error", "no se pudo reclamar el job", ctx);
-    return;
+    return "transient";
   }
   if (!claimed) {
-    return;
+    return "skipped";
   }
   logEvent("info", "análisis iniciado", { ...ctx, attempt: claimed.attemptCount });
 
@@ -255,7 +256,7 @@ export async function runAnalysis(
         "GEMINI_API_KEY no configurada",
         claimed.attemptCount,
       );
-      return;
+      return "failed";
     }
 
     const { data: fileData, error: downloadError } = await supabase.storage
@@ -306,6 +307,7 @@ export async function runAnalysis(
     if (!updatedAnalysis) {
       throw new Error("El lease del análisis ya no pertenece a este worker");
     }
+    return "completed";
   } catch (err) {
     try {
       await markAnalysisFailed(
@@ -315,8 +317,10 @@ export async function runAnalysis(
         claimed.attemptCount,
         Date.now() - startedAt,
       );
+      return "failed";
     } catch {
       logEvent("error", "no se pudo marcar el análisis como fallido", ctx);
+      return "transient";
     }
   } finally {
     stopHeartbeat();

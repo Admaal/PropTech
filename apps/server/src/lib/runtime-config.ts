@@ -15,6 +15,9 @@ const RawServerConfigSchema = z.object({
   RATE_LIMIT_WINDOW_MS: z.coerce.number().int().positive().default(15 * 60 * 1000),
   RATE_LIMIT_MAX: z.coerce.number().int().positive().default(100),
   UPLOAD_RATE_LIMIT_MAX: z.coerce.number().int().positive().default(5),
+  ANALYSIS_TRANSPORT: z.enum(["http", "pubsub"]).default("http"),
+  GCP_PROJECT_ID: z.string().min(1).optional(),
+  ANALYSIS_TOPIC: z.string().min(1).default("analysis-jobs"),
 });
 
 export interface ServerRuntimeConfig {
@@ -29,6 +32,9 @@ export interface ServerRuntimeConfig {
   rateLimitWindowMs: number;
   rateLimitMax: number;
   uploadRateLimitMax: number;
+  analysisTransport: "http" | "pubsub";
+  gcpProjectId?: string;
+  analysisTopic: string;
 }
 
 export function parseServerConfig(
@@ -78,5 +84,8 @@ export function parseServerConfig(
     rateLimitWindowMs: env.RATE_LIMIT_WINDOW_MS,
     rateLimitMax: env.RATE_LIMIT_MAX,
     uploadRateLimitMax: env.UPLOAD_RATE_LIMIT_MAX,
+    analysisTransport: env.ANALYSIS_TRANSPORT,
+    gcpProjectId: env.GCP_PROJECT_ID,
+    analysisTopic: env.ANALYSIS_TOPIC,
   };
 }

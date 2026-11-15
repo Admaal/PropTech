@@ -146,7 +146,7 @@ export class DocumentService {
 
     const document = await this.documents.findById(created.documentId);
 
-    dispatchAnalysisJob(
+    await dispatchAnalysisJob(
       {
         analysisId: created.analysisId,
         documentId: document.id,
