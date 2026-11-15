@@ -32,14 +32,10 @@ resource "google_monitoring_alert_policy" "analysis_dlq" {
     }
   }
 
-  # La métrica solo tiene datos cuando hay un mensaje en la DLQ, así que el incidente no se cerraría
-  # solo (por defecto, a los 7 días) y un mensaje nuevo no avisaría. Se cierra a los 30 minutos sin
-  # datos nuevos. No se usa evaluation_missing_data: exige una duración distinta de cero y la API
-  # rechaza el cambio con duration = "0s".
-  alert_strategy {
-    auto_close = "1800s"
-  }
-
+  # Comprobado en producción: el incidente se abre al llegar un mensaje a la DLQ y se cierra solo
+  # (~1 min) al terminar la ventana, por lo que un mensaje posterior debería avisar de nuevo. No hace falta
+  # alert_strategy. evaluation_missing_data tampoco: exige duración distinta de cero y la API lo
+  # rechaza con duration = "0s".
   notification_channels = [google_monitoring_notification_channel.alert_email.id]
 
   depends_on = [google_pubsub_topic.analysis_jobs_dlq]

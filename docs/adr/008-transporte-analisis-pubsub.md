@@ -65,7 +65,8 @@ Comprobado en producción el 2026-11-15:
   `analysis-jobs-dlq` tras 5 entregas en 108 s, conservando su `requestId`. Eso prueba también los
   permisos del agente de Pub/Sub sobre la DLQ. La suscripción se restauró idéntica y
   `terraform plan` no mostró cambios.
-- **Alerta:** la política abrió un incidente y el aviso por email llegó al destinatario. La prueba destapó que no se cerraba sola, y un
-  segundo mensaje no habría avisado; se corrigió con `auto_close` a 30 minutos. Un segundo mensaje dentro de los 30 minutos posteriores a un incidente no vuelve a avisar. No se usó `evaluation_missing_data`: exige una duración distinta de cero y la API rechaza el cambio con `duration = "0s"`.
+- **Alerta:** la política abrió un incidente al llegar el mensaje, el aviso por email llegó al
+  destinatario y el incidente se cerró solo a los 57 segundos, por lo que un mensaje posterior debería
+  abrir un incidente nuevo y avisar. No se ha repetido la prueba para comprobarlo.
 - **No probado:** una caída real de Supabase. Que `transient` responde `5xx` lo cubre un test
   unitario, pero el fallo real no se ha provocado.
