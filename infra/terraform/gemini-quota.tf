@@ -9,21 +9,20 @@ resource "google_project_service" "cloud_quotas" {
 }
 
 locals {
-  gemini_quota_ids = [
-    "GenerateRequestsPerDayPerProjectPerModel-FreeTier",
-    "GenerateRequestsPerDayPerProjectPerModel-PaidTier2",
-  ]
-  gemini_quota_models = [
-    "gemini-3.1-flash-lite",
-    "gemini-3-flash-preview",
-    "gemini-2.5-flash-lite",
+  # Pares verificados en Cloud Quotas. El free tier de gemini-2.5-flash-lite queda fuera:
+  # su límite por defecto ya es 20/día y 150 sería un aumento.
+  gemini_quota_pairs = [
+    { quota_id = "GenerateRequestsPerDayPerProjectPerModel-FreeTier", model = "gemini-3.1-flash-lite" },
+    { quota_id = "GenerateRequestsPerDayPerProjectPerModel-FreeTier", model = "gemini-3-flash-preview" },
+    { quota_id = "GenerateRequestsPerDayPerProjectPerModel-PaidTier2", model = "gemini-3.1-flash-lite" },
+    { quota_id = "GenerateRequestsPerDayPerProjectPerModel-PaidTier2", model = "gemini-3-flash-preview" },
+    { quota_id = "GenerateRequestsPerDayPerProjectPerModel-PaidTier2", model = "gemini-2.5-flash-lite" },
   ]
 }
 
 resource "google_cloud_quotas_quota_preference" "gemini_daily_cap" {
   for_each = {
-    for pair in setproduct(local.gemini_quota_ids, local.gemini_quota_models) :
-    "${pair[0]}|${pair[1]}" => { quota_id = pair[0], model = pair[1] }
+    for pair in local.gemini_quota_pairs : "${pair.quota_id}|${pair.model}" => pair
   }
   parent        = "projects/${var.project_id}"
   service       = "generativelanguage.googleapis.com"
