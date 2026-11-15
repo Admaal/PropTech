@@ -9,3 +9,4 @@ Specs cuyo comportamiento ya está implementado y no va a cambiar. Las activas e
 | 2026-11-15 | [portfolio-docs-cleanup](portfolio-docs-cleanup.md) | Limpieza documental y reglas locales del portfolio. Implementada. |
 | 2026-11-15 | [portfolio-readiness-audit](portfolio-readiness-audit.md) | Auditoría y preparación para publicar el portfolio. Implementada: `scan:secrets` y `check:docs` están en el repositorio. |
 | 2026-11-15 | [web-perf-images-docker](web-perf-images-docker.md) | Fotos WebP, navegación, Docker de Cloud Run y SEO crawler. Implementada: `optimize-image-url`, `robots.ts` y build Docker con instalación de producción. |
+| 2026-11-15 | [pubsub-analysis](pubsub-analysis.md) | Transporte de análisis por Pub/Sub con DLQ. Implementada y verificada en producción (ver su sección de evidencia). |

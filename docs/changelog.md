@@ -5,6 +5,19 @@ El historial anterior es privado y no se reconstruye aquí.
 
 ## 2026-11-15
 
+### Correcciones
+- **Seed idempotente:** cada ejecución duplicaba las propiedades de la demo (24 inmuebles en vez
+  de 12). Ahora se puede repetir sin duplicar datos. [#69](https://github.com/Admaal/PropTech/pull/69)
+
+### Dependencias
+- **`@types/multer` 2.3.0 y `eslint-config-next` 16.4.6**, aplicados juntos sobre el `main`
+  actual. [#70](https://github.com/Admaal/PropTech/pull/70)
+
+### Documentación
+- **GIF de la demo** en el README. [#68](https://github.com/Admaal/PropTech/pull/68)
+- **Coste y límites reales en el README**, specs versionadas con cuatro archivadas, nota en el
+  ADR 005 y este changelog. [#67](https://github.com/Admaal/PropTech/pull/67)
+
 ### Infraestructura y operación
 - **Estado remoto, alerta de DLQ y quota project:** el estado de Terraform vive en un bucket
   privado y versionado, hay una alerta por email cuando un análisis llega a la DLQ, y el

@@ -25,11 +25,20 @@ resource "google_monitoring_alert_policy" "analysis_dlq" {
       threshold_value = 0
       duration        = "0s"
 
+      # La métrica solo tiene datos cuando hay un mensaje en la DLQ. Los datos ausentes cuentan
+      # como "sin problema", así el incidente se cierra y el siguiente mensaje avisa otra vez.
+      evaluation_missing_data = "EVALUATION_MISSING_DATA_INACTIVE"
+
       aggregations {
         alignment_period   = "60s"
         per_series_aligner = "ALIGN_SUM"
       }
     }
+  }
+
+  # Red de seguridad: un incidente sin datos nuevos se cierra solo a los 30 minutos.
+  alert_strategy {
+    auto_close = "1800s"
   }
 
   notification_channels = [google_monitoring_notification_channel.alert_email.id]

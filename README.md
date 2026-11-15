@@ -51,6 +51,9 @@ docs/             → Guías de despliegue
 | Claim con leases para jobs de IA | Un job caído se recupera sin bloquear el análisis para siempre | Dejar `processing` sin recuperación; llamar a Gemini en cada entrega | [005](docs/adr/005-recuperacion-de-jobs-ia-con-leases.md) |
 | Permisos destructivos solo para admins | Borrar documentos y análisis es irreversible | Confiar en la interfaz; delete para todos los miembros | [006](docs/adr/006-permisos-destructivos-para-admins.md) |
 | Capas ligeras en lugar de hexagonal completa | Menos interfaces para un MVP; se añadirán cuando haya un segundo adaptador | Hexagonal pura | [007](docs/adr/007-layered-over-hexagonal.md) |
+| Transporte del análisis por Pub/Sub con DLQ | Un fallo de infraestructura se reintenta y, si persiste, llega a una cola visible con alerta | Mantener HTTP con reintentos propios; Cloud Tasks; Redis/BullMQ | [008](docs/adr/008-transporte-analisis-pubsub.md) |
+| Estado de Terraform en un bucket de GCS privado y versionado | No depende de una máquina y permite recuperar versiones anteriores | Estado local; estado en el repo; Terraform Cloud | [009](docs/adr/009-estado-remoto-terraform-gcs.md) |
+| Tope diario de peticiones a Gemini con Cloud Quotas | Un presupuesto solo avisa; el tope sí corta el gasto | Solo presupuesto; límite en AI Studio | [010](docs/adr/010-tope-diario-gemini-cloud-quotas.md) |
 
 ## Requisitos previos
 

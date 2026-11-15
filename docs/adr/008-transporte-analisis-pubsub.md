@@ -54,3 +54,18 @@ llegue.
   reconciliador (ADR-005) y métricas o trazas.
 - Riesgo conocido: un fallo de red hacia Gemini cuenta como fallo de negocio y no se
   reintenta por Pub/Sub; queda cubierto por la política de ADR-005.
+
+## Verificación
+
+Comprobado en producción el 2026-11-15:
+
+- **Camino feliz:** una subida con `X-Request-ID` propio devolvió `202`, el análisis terminó en
+  `completed`, y los logs de mcp-ai muestran el `POST 204` del push con ese mismo `requestId`.
+- **DLQ:** apuntando temporalmente la suscripción a una ruta inexistente, un mensaje llegó a
+  `analysis-jobs-dlq` tras 5 entregas en 108 s, conservando su `requestId`. Eso prueba también los
+  permisos del agente de Pub/Sub sobre la DLQ. La suscripción se restauró idéntica y
+  `terraform plan` no mostró cambios.
+- **Alerta:** la política abrió un incidente. La prueba destapó que no se cerraba sola, y un
+  segundo mensaje no habría avisado; se corrigió con `evaluation_missing_data` y `auto_close`.
+- **No probado:** una caída real de Supabase. Que `transient` responde `5xx` lo cubre un test
+  unitario, pero el fallo real no se ha provocado.
